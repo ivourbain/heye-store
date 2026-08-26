@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<!--
+  ================================================================
+  MELISSA WEBSHOP — etalage (Fase 3)
+  ----------------------------------------------------------------
+  Deze pagina bestaat uit 3 delen:
+    1) <style>  = het uiterlijk (kleuren, vormen)   -> "de opmaak"
+    2) <body>   = de structuur (wat er op de pagina staat)
+    3) <script> = de werking (zoeken, mandje, totaal) -> "de logica"
+  De producten zelf komen uit het aparte bestand products.js.
+  ================================================================
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Melissa — Haar- & verzorgingsaccessoires</title>
+
+  <style>
+    /* ---- 1) DE OPMAAK -------------------------------------------------
+       Kleuren staan bovenaan als "variabelen": pas hier één keer aan
+       en het verandert overal op de pagina. */
+    :root{
+      --rose:#c76b83;          /* hoofdkleur van Melissa */
+      --rose-donker:#a24d64;
+      --inkt:#2c2427;          /* tekstkleur */
+      --grijs:#7a7075;
+      --lijn:#ece4e6;
+      --achtergrond:#fbf7f7;
+      --wit:#ffffff;
+      --schaduw:0 4px 18px rgba(120,70,85,.08);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+      color:var(--inkt);background:var(--achtergrond);line-height:1.5;
+    }
+
+    /* ---- Kopbalk bovenaan ---- */
+    header{
+      position:sticky;top:0;z-index:20;background:var(--wit);
+      border-bottom:1px solid var(--lijn);box-shadow:var(--schaduw);
+    }
+    .balk{max-width:1150px;margin:0 auto;padding:14px 20px;
+      display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+    .logo{font-size:26px;font-weight:700;letter-spacing:.5px;color:var(--rose-donker)}
+    .logo span{font-weight:400;color:var(--grijs);font-size:14px;display:block;letter-spacing:0}
+    .zoek{flex:1;min-width:180px}
+    .zoek input{
+      width:100%;padding:11px 16px;border:1px solid var(--lijn);border-radius:30px;
+      font-size:15px;background:var(--achtergrond);outline:none}
+    .zoek input:focus{border-color:var(--rose)}
+    .mandknop{
+      position:relative;border:none;cursor:pointer;background:var(--rose);color:#fff;
+      padding:11px 20px;border-radius:30px;font-size:15px;font-weight:600}
+    .mandknop:hover{background:var(--rose-donker)}
+    .badge{
+      position:absolute;top:-7px;right:-7px;background:var(--inkt);color:#fff;
+      min-width:22px;height:22px;border-radius:11px;font-size:12px;font-weight:700;
+      display:flex;align-items:center;justify-content:center;padding:0 5px}
+
+    /* ---- Productrooster ---- */
+    main{max-width:1150px;margin:0 auto;padding:26px 20px 60px}
+    .telling{color:var(--grijs);font-size:14px;margin-bottom:18px}
+    .rooster{display:grid;gap:20px;
+      grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+    .kaart{
+      background:var(--wit);border:1px solid var(--lijn);border-radius:16px;
+      overflow:hidden;display:flex;flex-direction:column;transition:transform .12s, box-shadow .12s}
+    .kaart:hover{transform:translateY(-3px);box-shadow:var(--schaduw)}
+    .kaart .foto{aspect-ratio:1/1;background:#fff;display:flex;align-items:center;justify-content:center;padding:14px}
+    .kaart .foto img{max-width:100%;max-height:100%;object-fit:contain}
+    .kaart .inhoud{padding:12px 14px 16px;display:flex;flex-direction:column;gap:10px;flex:1}
+    .kaart .naam{font-size:14px;font-weight:600;min-height:38px}
+    .kaart .prijs{font-size:19px;font-weight:700;color:var(--rose-donker)}
+    .kaart button{
+      margin-top:auto;border:1px solid var(--rose);background:#fff;color:var(--rose-donker);
+      padding:9px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+    .kaart button:hover{background:var(--rose);color:#fff}
+    .leeg{text-align:center;color:var(--grijs);padding:60px 0}
+
+    /* ---- Winkelmandje (schuift in van rechts) ---- */
+    .overlay{position:fixed;inset:0;background:rgba(44,36,39,.4);opacity:0;
+      pointer-events:none;transition:opacity .2s;z-index:30}
+    .overlay.open{opacity:1;pointer-events:auto}
+    .mandje{
+      position:fixed;top:0;right:0;height:100%;width:380px;max-width:90vw;background:var(--wit);
+      z-index:40;transform:translateX(100%);transition:transform .25s;
+      display:flex;flex-direction:column;box-shadow:-6px 0 24px rgba(0,0,0,.12)}
+    .mandje.open{transform:translateX(0)}
+    .mandje .kop{padding:18px 20px;border-bottom:1px solid var(--lijn);
+      display:flex;justify-content:space-between;align-items:center}
+    .mandje .kop h2{font-size:19px}
+    .sluit{border:none;background:none;font-size:26px;cursor:pointer;color:var(--grijs);line-height:1}
+    .items{flex:1;overflow-y:auto;padding:10px 20px}
+    .regel{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--lijn)}
+    .regel img{width:56px;height:56px;object-fit:contain;background:#fff;border:1px solid var(--lijn);border-radius:8px}
+    .regel .r-naam{font-size:13px;font-weight:600;flex:1}
+    .regel .r-prijs{font-size:13px;color:var(--grijs)}
+    .aantal{display:flex;align-items:center;gap:8px;margin-top:6px}
+    .aantal button{width:26px;height:26px;border:1px solid var(--lijn);background:#fff;
+      border-radius:7px;cursor:pointer;font-size:16px;line-height:1}
+    .aantal span{min-width:22px;text-align:center;font-weight:600}
+    .mandje .voet{padding:18px 20px;border-top:1px solid var(--lijn)}
+    .totaalregel{display:flex;justify-content:space-between;font-size:19px;font-weight:700;margin-bottom:4px}
+    .btw{font-size:12px;color:var(--grijs);margin-bottom:14px}
+    .afreken{width:100%;background:var(--rose);color:#fff;border:none;padding:14px;
+      border-radius:12px;font-size:16px;font-weight:600;cursor:pointer}
+    .afreken:hover{background:var(--rose-donker)}
+    .afreken:disabled{background:var(--lijn);color:var(--grijs);cursor:not-allowed}
+    .mand-leeg{text-align:center;color:var(--grijs);padding:50px 10px}
+  </style>
+</head>
+
+<body>
+  <!-- ---- 2) DE STRUCTUUR ---------------------------------------------- -->
+  <header>
+    <div class="balk">
+      <div class="logo">MELISSA<span>haar- &amp; verzorgingsaccessoires</span></div>
+      <div class="zoek">
+        <input id="zoekveld" type="search" placeholder="Zoek een product… (bv. haarclip, kwast, kam)">
+      </div>
+      <button class="mandknop" id="open-mandje">
+        Mandje <span class="badge" id="badge" style="display:none">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <p class="telling" id="telling"></p>
+    <div class="rooster" id="rooster"></div>
+    <p class="leeg" id="geen" style="display:none">Geen producten gevonden. Probeer een andere zoekterm.</p>
+  </main>
+
+  <!-- Het winkelmandje -->
+  <div class="overlay" id="overlay"></div>
+  <aside class="mandje" id="mandje">
+    <div class="kop">
+      <h2>Jouw mandje</h2>
+      <button class="sluit" id="sluit-mandje">&times;</button>
+    </div>
+    <div class="items" id="mand-items"></div>
+    <div class="voet">
+      <div class="totaalregel"><span>Totaal</span><span id="totaal">€0,00</span></div>
+      <div class="btw">incl. 21% btw</div>
+      <button class="afreken" id="afreken" disabled>Bestellen</button>
+    </div>
+  </aside>
+
+  <!-- De productlijst inladen -->
+  <script src="products.js"></script>
+
+  <script>
+    /* ---- 3) DE WERKING ------------------------------------------------
+       Het mandje is een lijst in het geheugen: per product-id houden
+       we bij hoeveel stuks erin zitten, bv. { "ME26936": 2 }. */
+    const mandje = {};
+
+    // Prijs mooi tonen als "€2,90" (Belgisch: komma als decimaalteken)
+    function euro(bedrag){
+      return "€" + bedrag.toFixed(2).replace(".", ",");
+    }
+
+    // Teken alle productkaarten (optioneel gefilterd op een zoekterm)
+    function toonProducten(zoekterm = ""){
+      const rooster = document.getElementById("rooster");
+      const term = zoekterm.trim().toLowerCase();
+      const lijst = MELISSA_PRODUCTEN.filter(p =>
+        p.naam && p.naam.toLowerCase().includes(term)
+      );
+
+      rooster.innerHTML = "";                       // maak eerst leeg
+      lijst.forEach(p => {
+        const kaart = document.createElement("div");
+        kaart.className = "kaart";
+        kaart.innerHTML = `
+          <div class="foto"><img src="${p.foto}" alt="${p.naam}" loading="lazy"></div>
+          <div class="inhoud">
+            <div class="naam">${p.naam.replace("Melissa ", "")}</div>
+            <div class="prijs">${euro(p.prijs_incl_btw)}</div>
+            <button data-id="${p.id}">In mandje</button>
+          </div>`;
+        rooster.appendChild(kaart);
+      });
+
+      // teksten en lege-staat bijwerken
+      document.getElementById("telling").textContent = `${lijst.length} producten`;
+      document.getElementById("geen").style.display = lijst.length ? "none" : "block";
+    }
+
+    // Zoek een product terug op zijn id
+    function vind(id){ return MELISSA_PRODUCTEN.find(p => p.id === id); }
+
+    // Voeg 1 stuk toe aan het mandje
+    function voegToe(id){
+      mandje[id] = (mandje[id] || 0) + 1;
+      tekenMandje();
+    }
+    // Pas het aantal aan (bv. +1 of -1); bij 0 verdwijnt het uit het mandje
+    function wijzig(id, delta){
+      mandje[id] = (mandje[id] || 0) + delta;
+      if (mandje[id] <= 0) delete mandje[id];
+      tekenMandje();
+    }
+
+    // Teken de inhoud van het mandje + reken het totaal uit
+    function tekenMandje(){
+      const vak = document.getElementById("mand-items");
+      const ids = Object.keys(mandje);
+      let totaal = 0, aantalStuks = 0;
+
+      if (ids.length === 0){
+        vak.innerHTML = `<div class="mand-leeg">Je mandje is nog leeg.</div>`;
+      } else {
+        vak.innerHTML = "";
+        ids.forEach(id => {
+          const p = vind(id), n = mandje[id];
+          totaal += p.prijs_incl_btw * n;
+          aantalStuks += n;
+          const regel = document.createElement("div");
+          regel.className = "regel";
+          regel.innerHTML = `
+            <img src="${p.foto}" alt="">
+            <div style="flex:1">
+              <div class="r-naam">${p.naam.replace("Melissa ", "")}</div>
+              <div class="r-prijs">${euro(p.prijs_incl_btw)} per stuk</div>
+              <div class="aantal">
+                <button onclick="wijzig('${id}',-1)">−</button>
+                <span>${n}</span>
+                <button onclick="wijzig('${id}',1)">+</button>
+              </div>
+            </div>
+            <div class="r-prijs"><strong>${euro(p.prijs_incl_btw * n)}</strong></div>`;
+          vak.appendChild(regel);
+        });
+      }
+
+      document.getElementById("totaal").textContent = euro(totaal);
+      document.getElementById("afreken").disabled = (aantalStuks === 0);
+
+      // het bolletje op de mandknop
+      const badge = document.getElementById("badge");
+      badge.textContent = aantalStuks;
+      badge.style.display = aantalStuks ? "flex" : "none";
+    }
+
+    // Mandje openen / sluiten
+    function zetMandje(open){
+      document.getElementById("mandje").classList.toggle("open", open);
+      document.getElementById("overlay").classList.toggle("open", open);
+    }
+
+    /* ---- Alles aan elkaar koppelen (knoppen laten reageren) ---- */
+    document.getElementById("rooster").addEventListener("click", e => {
+      if (e.target.matches("button[data-id]")) voegToe(e.target.dataset.id);
+    });
+    document.getElementById("zoekveld").addEventListener("input", e => toonProducten(e.target.value));
+    document.getElementById("open-mandje").addEventListener("click", () => zetMandje(true));
+    document.getElementById("sluit-mandje").addEventListener("click", () => zetMandje(false));
+    document.getElementById("overlay").addEventListener("click", () => zetMandje(false));
+    document.getElementById("afreken").addEventListener("click", () => {
+      alert("In Fase 5 komt hier de betaling met QR-code.\\nDan zie je hier je totaalbedrag en een QR om te scannen.");
+    });
+
+    // Start: toon alle producten en een leeg mandje
+    toonProducten();
+    tekenMandje();
+  </script>
+</body>
+</html>

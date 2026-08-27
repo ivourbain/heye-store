@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bedankt voor je bestelling — Melissa</title>
+  <style>
+    :root{--rose:#c76b83;--rose-donker:#a24d64;--inkt:#2c2427;--grijs:#6d6469;
+      --lijn:#ece4e6;--achtergrond:#fbf7f7;--wit:#fff}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(--inkt);
+      background:var(--achtergrond);line-height:1.6;min-height:100vh;display:flex;flex-direction:column}
+    header{background:var(--wit);border-bottom:1px solid var(--lijn)}
+    .balk{max-width:820px;margin:0 auto;padding:16px 22px}
+    .logo{font-size:23px;font-weight:700;color:var(--rose-donker);text-decoration:none;letter-spacing:.5px}
+    main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 22px}
+    .kaart{background:var(--wit);border:1px solid var(--lijn);border-radius:18px;
+      padding:40px 34px;max-width:460px;text-align:center;box-shadow:0 8px 30px rgba(120,70,85,.07)}
+    .vink{width:70px;height:70px;border-radius:50%;background:var(--rose);color:#fff;
+      font-size:38px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+    h1{font-size:24px;margin-bottom:12px}
+    p{color:var(--grijs);font-size:15px;margin-bottom:14px}
+    .nummer{display:inline-block;background:var(--achtergrond);border:1px solid var(--lijn);
+      border-radius:8px;padding:6px 14px;font-weight:700;color:var(--inkt);margin-bottom:20px}
+    .terug{display:inline-block;background:var(--rose);color:#fff;text-decoration:none;
+      padding:12px 24px;border-radius:12px;font-weight:600}
+    .terug:hover{background:var(--rose-donker)}
+  </style>
+</head>
+<body>
+  <header><div class="balk"><a class="logo" href="index.html">MELISSA</a></div></header>
+  <main>
+    <div class="kaart">
+      <div class="vink">✓</div>
+      <h1>Bedankt voor je bestelling!</h1>
+      <p>We hebben je bestelling goed ontvangen. Zodra je betaling verwerkt is,
+         maken we alles klaar en verzenden we het naar je.</p>
+      <div class="nummer" id="bestelnummer">—</div>
+      <p>Bewaar dit bestelnummer — zo kunnen we je bestelling altijd terugvinden.</p>
+      <a class="terug" href="index.html">← Terug naar de winkel</a>
+    </div>
+  </main>
+  <script>
+    // Het bestelnummer uit de webadres-parameter halen en tonen
+    const params = new URLSearchParams(window.location.search);
+    const nr = params.get("bestelnummer");
+    if (nr) document.getElementById("bestelnummer").textContent = nr;
+    else document.getElementById("bestelnummer").style.display = "none";
+  </script>
+</body>
+</html>

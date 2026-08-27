@@ -1,0 +1,10 @@
+# Netlify-instellingen voor de Melissa webshop
+# - de website staat in de hoofdmap
+# - de servercode (functions) staat in netlify/functions
+
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"

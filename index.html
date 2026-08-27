@@ -149,6 +149,10 @@
     .akkoord{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--inkt);
       margin:6px 0 16px;line-height:1.5}
     .akkoord input{margin-top:2px;flex-shrink:0}
+    .afreken-tweede{width:100%;background:#fff;color:var(--rose-donker);border:1px solid var(--rose);
+      padding:13px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px}
+    .afreken-tweede:hover{background:var(--achtergrond)}
+    .keuze-fout{color:#b3261e;font-size:13px;margin-top:12px;text-align:center}
 
     /* ---- Voetbalk met juridische links ---- */
     footer{border-top:1px solid var(--lijn);background:var(--wit);margin-top:20px}
@@ -232,6 +236,15 @@
         en het <a href="retour.html" target="_blank">retourbeleid</a>.</span></label>
       <button type="submit" class="afreken">Naar betaling →</button>
     </form>
+
+    <!-- Stap "keuze": hoe wil de klant betalen? -->
+    <div id="betaal-keuze" style="display:none">
+      <h2>Hoe wil je betalen?</h2>
+      <p class="betaal-uitleg">Kies je betaalmethode — beide komen rechtstreeks bij Melissa terecht.</p>
+      <button type="button" class="afreken" id="kies-online">💳 Online betalen (Bancontact / kaart)</button>
+      <button type="button" class="afreken-tweede" id="kies-overschrijving">Betalen via overschrijving (QR-code)</button>
+      <p id="keuze-fout" class="keuze-fout" style="display:none"></p>
+    </div>
 
     <div id="betaal-stap1" style="display:none">
       <h2>Bijna klaar — scan &amp; betaal</h2>
@@ -434,11 +447,12 @@
     let huidigeMededeling = "";
     let huidigTotaal = 0;
 
-    // Toon welke stap van het betaalscherm zichtbaar is (0=gegevens, 1=QR, 2=bedankt)
-    function toonStap(nr){
-      document.getElementById("bestelform").style.display   = (nr === 0) ? "block" : "none";
-      document.getElementById("betaal-stap1").style.display = (nr === 1) ? "block" : "none";
-      document.getElementById("betaal-stap2").style.display = (nr === 2) ? "block" : "none";
+    // Toon één stap van het betaalscherm: "form" (gegevens), "keuze", "qr" of "bedankt"
+    function toonStap(naam){
+      document.getElementById("bestelform").style.display   = (naam === "form")    ? "block" : "none";
+      document.getElementById("betaal-keuze").style.display = (naam === "keuze")   ? "block" : "none";
+      document.getElementById("betaal-stap1").style.display = (naam === "qr")      ? "block" : "none";
+      document.getElementById("betaal-stap2").style.display = (naam === "bedankt") ? "block" : "none";
     }
 
     // Korte samenvatting van het mandje als tekst (voor in de bestelling-mail)
@@ -461,7 +475,7 @@
       document.getElementById("f-bestelling").value  = bestellingSamenvatting();
       document.getElementById("f-totaal").value      = euro(huidigTotaal);
 
-      toonStap(0);
+      toonStap("form");
       document.getElementById("betaal").classList.add("open");
       document.getElementById("betaal-overlay").classList.add("open");
     }
@@ -475,7 +489,39 @@
       zetWaarde("b-iban",   WINKEL.iban,                                  WINKEL.iban);
       zetWaarde("b-bedrag", euro(huidigTotaal),  huidigTotaal.toFixed(2).replace(".", ",")); // bv. 8,70
       zetWaarde("b-med",    huidigeMededeling,                            huidigeMededeling);
-      toonStap(1);
+      toonStap("qr");
+    }
+
+    // De klant naar Mollie sturen (online betalen). De geheime sleutel staat
+    // veilig in een Netlify Function — nooit op de website zelf.
+    async function startMollie(knop){
+      const fout = document.getElementById("keuze-fout");
+      fout.style.display = "none";
+      knop.disabled = true;
+      const origineel = knop.textContent;
+      knop.textContent = "Even geduld…";
+      try {
+        const resp = await fetch("/.netlify/functions/create-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bedrag: huidigTotaal,
+            bestelnummer: huidigeMededeling,
+            email: (document.querySelector("input[name=email]") || {}).value || ""
+          })
+        });
+        const data = await resp.json();
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;   // door naar de betaalpagina van Mollie
+          return;
+        }
+        throw new Error(data.error || "onbekend");
+      } catch (e) {
+        knop.disabled = false;
+        knop.textContent = origineel;
+        fout.textContent = "Online betalen lukt nu even niet. Kies gerust 'Betalen via overschrijving', of probeer straks opnieuw.";
+        fout.style.display = "block";
+      }
     }
 
     // Toon een waarde op het scherm en onthoud wat er precies gekopieerd moet worden
@@ -530,8 +576,13 @@
         // Lukt het versturen niet (bv. bij lokaal testen)? Dan gaan we toch door naar de betaling.
         console.log("Bestelling versturen mislukte (lokaal testen?):", err);
       }
-      gaNaarBetaling();
+      document.getElementById("keuze-fout").style.display = "none";
+      toonStap("keuze");   // klant kiest: online betalen of overschrijving
     });
+
+    // De twee betaalkeuzes
+    document.getElementById("kies-online").addEventListener("click", (e) => startMollie(e.currentTarget));
+    document.getElementById("kies-overschrijving").addEventListener("click", () => gaNaarBetaling());
 
     document.getElementById("afreken").addEventListener("click", () => { zetMandje(false); openBetaling(); });
     document.getElementById("betaal-sluit").addEventListener("click", sluitBetaling);
@@ -539,7 +590,7 @@
     document.getElementById("betaald-knop").addEventListener("click", () => {
       // "Ik heb betaald" -> bedankscherm + mandje leegmaken
       document.getElementById("b-med2").textContent = huidigeMededeling;
-      toonStap(2);
+      toonStap("bedankt");
       Object.keys(mandje).forEach(id => delete mandje[id]);
       tekenMandje();
     });

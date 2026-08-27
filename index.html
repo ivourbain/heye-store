@@ -131,6 +131,24 @@
     .betaal-tip{font-size:12.5px;color:var(--grijs);margin-bottom:16px;line-height:1.5}
     .bedankt{width:64px;height:64px;border-radius:50%;background:var(--rose);color:#fff;
       font-size:34px;display:flex;align-items:center;justify-content:center;margin:6px auto 14px}
+
+    /* ---- Afrekenformulier (velden) ---- */
+    .veld{margin-bottom:12px}
+    .veld label{display:block;font-size:13px;color:var(--grijs);margin-bottom:4px;font-weight:600}
+    .veld input, .veld textarea{width:100%;padding:10px 12px;border:1px solid var(--lijn);
+      border-radius:9px;font-size:15px;font-family:inherit;background:var(--achtergrond);outline:none}
+    .veld input:focus, .veld textarea:focus{border-color:var(--rose)}
+    .tweekolom{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .akkoord{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--inkt);
+      margin:6px 0 16px;line-height:1.5}
+    .akkoord input{margin-top:2px;flex-shrink:0}
+
+    /* ---- Voetbalk met juridische links ---- */
+    footer{border-top:1px solid var(--lijn);background:var(--wit);margin-top:20px}
+    .voet{max-width:1150px;margin:0 auto;padding:22px 20px;display:flex;gap:14px;
+      flex-wrap:wrap;justify-content:space-between;align-items:center;font-size:13px;color:var(--grijs)}
+    .voet a{color:var(--grijs);text-decoration:none;margin-right:16px}
+    .voet a:hover{color:var(--rose-donker)}
   </style>
 </head>
 
@@ -154,6 +172,15 @@
     <p class="leeg" id="geen" style="display:none">Geen producten gevonden. Probeer een andere zoekterm.</p>
   </main>
 
+  <footer><div class="voet">
+    <div>
+      <a href="voorwaarden.html">Algemene voorwaarden</a>
+      <a href="privacy.html">Privacybeleid</a>
+      <a href="retour.html">Retour &amp; herroeping</a>
+    </div>
+    <div>© Melissa — CR.Service - Heye Store · Winkelstraat 69/1, 2890 Sint-Amands</div>
+  </div></footer>
+
   <!-- Het winkelmandje -->
   <div class="overlay" id="overlay"></div>
   <aside class="mandje" id="mandje">
@@ -173,7 +200,33 @@
   <div class="overlay" id="betaal-overlay"></div>
   <div class="betaal" id="betaal">
     <button class="sluit betaal-sluit" id="betaal-sluit">&times;</button>
-    <div id="betaal-stap1">
+
+    <!-- Stap 0: gegevens van de klant (Netlify-formulier) -->
+    <form id="bestelform" name="bestelling" method="POST"
+          data-netlify="true" netlify-honeypot="bot-field" style="text-align:left">
+      <input type="hidden" name="form-name" value="bestelling">
+      <p style="display:none"><label>Laat dit leeg: <input name="bot-field"></label></p>
+      <h2 style="text-align:center">Jouw gegevens</h2>
+      <p class="betaal-uitleg" style="text-align:center">Vul je gegevens in zodat we je bestelling kunnen leveren.</p>
+      <div class="veld"><label>Naam *</label><input name="naam" required></div>
+      <div class="veld"><label>E-mail *</label><input type="email" name="email" required></div>
+      <div class="veld"><label>Straat en nummer *</label><input name="adres" required></div>
+      <div class="tweekolom">
+        <div class="veld"><label>Postcode *</label><input name="postcode" required></div>
+        <div class="veld"><label>Gemeente *</label><input name="gemeente" required></div>
+      </div>
+      <div class="veld"><label>Telefoon (optioneel)</label><input name="telefoon"></div>
+      <div class="veld"><label>Opmerking (optioneel)</label><textarea name="opmerking" rows="2"></textarea></div>
+      <input type="hidden" name="bestelnummer" id="f-bestelnummer">
+      <input type="hidden" name="bestelling" id="f-bestelling">
+      <input type="hidden" name="totaal" id="f-totaal">
+      <label class="akkoord"><input type="checkbox" name="akkoord" value="ja" required>
+        <span>Ik ga akkoord met de <a href="voorwaarden.html" target="_blank">voorwaarden</a>
+        en het <a href="retour.html" target="_blank">retourbeleid</a>.</span></label>
+      <button type="submit" class="afreken">Naar betaling →</button>
+    </form>
+
+    <div id="betaal-stap1" style="display:none">
       <h2>Bijna klaar — scan &amp; betaal</h2>
       <p class="betaal-uitleg">Open je bankapp, kies "QR-code scannen" en scan de code hieronder.
          De overschrijving is al ingevuld — je hoeft enkel te bevestigen.</p>
@@ -366,27 +419,49 @@
     }
 
     let huidigeMededeling = "";
+    let huidigTotaal = 0;
 
+    // Toon welke stap van het betaalscherm zichtbaar is (0=gegevens, 1=QR, 2=bedankt)
+    function toonStap(nr){
+      document.getElementById("bestelform").style.display   = (nr === 0) ? "block" : "none";
+      document.getElementById("betaal-stap1").style.display = (nr === 1) ? "block" : "none";
+      document.getElementById("betaal-stap2").style.display = (nr === 2) ? "block" : "none";
+    }
+
+    // Korte samenvatting van het mandje als tekst (voor in de bestelling-mail)
+    function bestellingSamenvatting(){
+      return Object.keys(mandje).map(id => {
+        const p = vind(id), n = mandje[id];
+        return `${n}x ${p.naam.replace("Melissa ","")} (à ${euro(p.prijs_incl_btw)})`;
+      }).join(" | ");
+    }
+
+    // STAP 0: het gegevensformulier openen
     function openBetaling(){
-      // totaal opnieuw berekenen
-      let totaal = 0;
-      Object.keys(mandje).forEach(id => totaal += vind(id).prijs_incl_btw * mandje[id]);
-      if (totaal <= 0) return;
+      huidigTotaal = 0;
+      Object.keys(mandje).forEach(id => huidigTotaal += vind(id).prijs_incl_btw * mandje[id]);
+      if (huidigTotaal <= 0) return;
 
       huidigeMededeling = maakBestelnummer();
-      const tekst = epcTekst(totaal, huidigeMededeling);
+      // verborgen velden vullen zodat ze meegaan met de bestelling
+      document.getElementById("f-bestelnummer").value = huidigeMededeling;
+      document.getElementById("f-bestelling").value  = bestellingSamenvatting();
+      document.getElementById("f-totaal").value      = euro(huidigTotaal);
 
-      tekenQR(document.getElementById("qr-canvas"), tekst);
-      document.getElementById("b-naam").textContent = WINKEL.naam;
-      document.getElementById("b-iban").textContent = WINKEL.iban;
-      document.getElementById("b-bedrag").textContent = euro(totaal);
-      document.getElementById("b-med").textContent = huidigeMededeling;
-
-      // scherm tonen (stap 1)
-      document.getElementById("betaal-stap1").style.display = "block";
-      document.getElementById("betaal-stap2").style.display = "none";
+      toonStap(0);
       document.getElementById("betaal").classList.add("open");
       document.getElementById("betaal-overlay").classList.add("open");
+    }
+
+    // STAP 1: de QR tonen (na het invullen van de gegevens)
+    function gaNaarBetaling(){
+      const tekst = epcTekst(huidigTotaal, huidigeMededeling);
+      tekenQR(document.getElementById("qr-canvas"), tekst);
+      document.getElementById("b-naam").textContent   = WINKEL.naam;
+      document.getElementById("b-iban").textContent   = WINKEL.iban;
+      document.getElementById("b-bedrag").textContent = euro(huidigTotaal);
+      document.getElementById("b-med").textContent    = huidigeMededeling;
+      toonStap(1);
     }
 
     function sluitBetaling(){
@@ -394,18 +469,38 @@
       document.getElementById("betaal-overlay").classList.remove("open");
     }
 
+    // Formulier verzenden: gegevens naar Netlify sturen, dan door naar de QR
+    document.getElementById("bestelform").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      try {
+        // Netlify vangt dit op; jij ziet elke bestelling in je Netlify-dashboard
+        await fetch("/", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams(new FormData(form)).toString()
+        });
+      } catch (err) {
+        // Lukt het versturen niet (bv. bij lokaal testen)? Dan gaan we toch door naar de betaling.
+        console.log("Bestelling versturen mislukte (lokaal testen?):", err);
+      }
+      gaNaarBetaling();
+    });
+
     document.getElementById("afreken").addEventListener("click", () => { zetMandje(false); openBetaling(); });
     document.getElementById("betaal-sluit").addEventListener("click", sluitBetaling);
     document.getElementById("betaal-overlay").addEventListener("click", sluitBetaling);
     document.getElementById("betaald-knop").addEventListener("click", () => {
       // "Ik heb betaald" -> bedankscherm + mandje leegmaken
       document.getElementById("b-med2").textContent = huidigeMededeling;
-      document.getElementById("betaal-stap1").style.display = "none";
-      document.getElementById("betaal-stap2").style.display = "block";
+      toonStap(2);
       Object.keys(mandje).forEach(id => delete mandje[id]);
       tekenMandje();
     });
-    document.getElementById("klaar-knop").addEventListener("click", sluitBetaling);
+    document.getElementById("klaar-knop").addEventListener("click", () => {
+      document.getElementById("bestelform").reset();  // formulier leegmaken voor een volgende bestelling
+      sluitBetaling();
+    });
 
     // Start: toon alle producten en een leeg mandje
     toonProducten();

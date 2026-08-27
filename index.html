@@ -109,6 +109,28 @@
     .afreken:hover{background:var(--rose-donker)}
     .afreken:disabled{background:var(--lijn);color:var(--grijs);cursor:not-allowed}
     .mand-leeg{text-align:center;color:var(--grijs);padding:50px 10px}
+
+    /* ---- Betaalscherm (QR) ---- */
+    .betaal{
+      position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);
+      width:420px;max-width:94vw;max-height:92vh;overflow-y:auto;background:var(--wit);
+      border-radius:18px;z-index:50;padding:26px 26px 22px;text-align:center;
+      box-shadow:0 20px 60px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .2s, transform .2s}
+    .betaal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+    .betaal h2{font-size:21px;margin-bottom:8px}
+    .betaal-uitleg{color:var(--grijs);font-size:14px;margin-bottom:18px;line-height:1.55}
+    .betaal-sluit{position:absolute;top:12px;right:16px}
+    .qr{width:230px;height:230px;image-rendering:pixelated;border:1px solid var(--lijn);
+      border-radius:12px;padding:8px;background:#fff;margin:0 auto 18px;display:block}
+    .betaal-gegevens{text-align:left;background:var(--achtergrond);border-radius:12px;
+      padding:12px 16px;margin-bottom:14px;font-size:14px}
+    .betaal-gegevens div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--lijn)}
+    .betaal-gegevens div:last-child{border-bottom:none}
+    .betaal-gegevens span{color:var(--grijs)}
+    .betaal-gegevens strong{text-align:right;word-break:break-all}
+    .betaal-tip{font-size:12.5px;color:var(--grijs);margin-bottom:16px;line-height:1.5}
+    .bedankt{width:64px;height:64px;border-radius:50%;background:var(--rose);color:#fff;
+      font-size:34px;display:flex;align-items:center;justify-content:center;margin:6px auto 14px}
   </style>
 </head>
 
@@ -147,10 +169,52 @@
     </div>
   </aside>
 
-  <!-- De productlijst inladen -->
+  <!-- Betaalscherm met QR-code -->
+  <div class="overlay" id="betaal-overlay"></div>
+  <div class="betaal" id="betaal">
+    <button class="sluit betaal-sluit" id="betaal-sluit">&times;</button>
+    <div id="betaal-stap1">
+      <h2>Bijna klaar — scan &amp; betaal</h2>
+      <p class="betaal-uitleg">Open je bankapp, kies "QR-code scannen" en scan de code hieronder.
+         De overschrijving is al ingevuld — je hoeft enkel te bevestigen.</p>
+      <canvas id="qr-canvas" class="qr"></canvas>
+      <div class="betaal-gegevens">
+        <div><span>Begunstigde</span><strong id="b-naam"></strong></div>
+        <div><span>IBAN</span><strong id="b-iban"></strong></div>
+        <div><span>Bedrag</span><strong id="b-bedrag"></strong></div>
+        <div><span>Mededeling</span><strong id="b-med"></strong></div>
+      </div>
+      <p class="betaal-tip">Lukt scannen niet? Je kunt de overschrijving ook handmatig doen met
+         de gegevens hierboven. Vermeld zeker de <strong>mededeling</strong> — zo herkent Melissa jouw bestelling.</p>
+      <button class="afreken" id="betaald-knop">Ik heb betaald</button>
+    </div>
+    <div id="betaal-stap2" style="display:none">
+      <div class="bedankt">✓</div>
+      <h2>Bedankt voor je bestelling!</h2>
+      <p class="betaal-uitleg">Zodra Melissa je betaling ziet binnenkomen, wordt je bestelling
+         klaargemaakt en verzonden. Je mededeling was <strong id="b-med2"></strong>.</p>
+      <button class="afreken" id="klaar-knop">Sluiten</button>
+    </div>
+  </div>
+
+  <!-- De QR-generator en de productlijst inladen -->
+  <script src="qrcode.js"></script>
   <script src="products.js"></script>
 
   <script>
+    /* ============================================================
+       ⚙️  JOUW REKENINGGEGEVENS — pas deze 3 regels aan!
+       Hier komt jouw echte IBAN en de naam zoals die op je
+       rekening staat. Zolang hier het TESTnummer staat, werkt de
+       QR wel, maar gaat het geld nergens heen. Zet er jouw eigen
+       IBAN in zodra je klaar bent.
+       ============================================================ */
+    const WINKEL = {
+      naam: "CR.Service - Heye Store",     // naam zoals op je bankrekening
+      iban: "BE84731068044259",            // jouw eigen IBAN
+      bic:  ""                             // mag leeg blijven
+    };
+
     /* ---- 3) DE WERKING ------------------------------------------------
        Het mandje is een lijst in het geheugen: per product-id houden
        we bij hoeveel stuks erin zitten, bv. { "ME26936": 2 }. */
@@ -258,9 +322,90 @@
     document.getElementById("open-mandje").addEventListener("click", () => zetMandje(true));
     document.getElementById("sluit-mandje").addEventListener("click", () => zetMandje(false));
     document.getElementById("overlay").addEventListener("click", () => zetMandje(false));
-    document.getElementById("afreken").addEventListener("click", () => {
-      alert("In Fase 5 komt hier de betaling met QR-code.\\nDan zie je hier je totaalbedrag en een QR om te scannen.");
+    /* ---- BETALING (Fase 5) --------------------------------------------
+       We maken een EPC-QR (SEPA-standaard). De bankapp van de klant
+       leest daaruit: begunstigde, IBAN, bedrag en mededeling. */
+
+    // Uniek bestelnummer, bv. MEL-260826-0473
+    function maakBestelnummer(){
+      const d = new Date();
+      const dd = String(d.getDate()).padStart(2,"0");
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const jj = String(d.getFullYear()).slice(2);
+      const rnd = String(Math.floor(Math.random()*10000)).padStart(4,"0");
+      return `MEL-${jj}${mm}${dd}-${rnd}`;
+    }
+
+    // Bouw de EPC-tekst volgens de SEPA-QR-standaard (11 regels)
+    function epcTekst(bedrag, mededeling){
+      return [
+        "BCD","002","1","SCT",
+        WINKEL.bic,          // BIC (mag leeg)
+        WINKEL.naam,         // begunstigde
+        WINKEL.iban,         // IBAN
+        "EUR" + bedrag.toFixed(2),
+        "",                  // doelcode (leeg)
+        "",                  // gestructureerde mededeling (leeg)
+        mededeling           // vrije mededeling = bestelnummer
+      ].join("\n");
+    }
+
+    // Teken de QR op het canvas
+    function tekenQR(canvas, tekst){
+      const m = maakQR(tekst, 1);      // 1 = foutcorrectie M
+      const n = m.length, q = 4;       // q = witrand (verplicht)
+      const px = 230, s = Math.floor(px / (n + 2*q));
+      const groot = (n + 2*q) * s;
+      canvas.width = groot; canvas.height = groot;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0,0,groot,groot);
+      ctx.fillStyle = "#000";
+      for (let y=0; y<n; y++)
+        for (let x=0; x<n; x++)
+          if (m[y][x]) ctx.fillRect((x+q)*s, (y+q)*s, s, s);
+    }
+
+    let huidigeMededeling = "";
+
+    function openBetaling(){
+      // totaal opnieuw berekenen
+      let totaal = 0;
+      Object.keys(mandje).forEach(id => totaal += vind(id).prijs_incl_btw * mandje[id]);
+      if (totaal <= 0) return;
+
+      huidigeMededeling = maakBestelnummer();
+      const tekst = epcTekst(totaal, huidigeMededeling);
+
+      tekenQR(document.getElementById("qr-canvas"), tekst);
+      document.getElementById("b-naam").textContent = WINKEL.naam;
+      document.getElementById("b-iban").textContent = WINKEL.iban;
+      document.getElementById("b-bedrag").textContent = euro(totaal);
+      document.getElementById("b-med").textContent = huidigeMededeling;
+
+      // scherm tonen (stap 1)
+      document.getElementById("betaal-stap1").style.display = "block";
+      document.getElementById("betaal-stap2").style.display = "none";
+      document.getElementById("betaal").classList.add("open");
+      document.getElementById("betaal-overlay").classList.add("open");
+    }
+
+    function sluitBetaling(){
+      document.getElementById("betaal").classList.remove("open");
+      document.getElementById("betaal-overlay").classList.remove("open");
+    }
+
+    document.getElementById("afreken").addEventListener("click", () => { zetMandje(false); openBetaling(); });
+    document.getElementById("betaal-sluit").addEventListener("click", sluitBetaling);
+    document.getElementById("betaal-overlay").addEventListener("click", sluitBetaling);
+    document.getElementById("betaald-knop").addEventListener("click", () => {
+      // "Ik heb betaald" -> bedankscherm + mandje leegmaken
+      document.getElementById("b-med2").textContent = huidigeMededeling;
+      document.getElementById("betaal-stap1").style.display = "none";
+      document.getElementById("betaal-stap2").style.display = "block";
+      Object.keys(mandje).forEach(id => delete mandje[id]);
+      tekenMandje();
     });
+    document.getElementById("klaar-knop").addEventListener("click", sluitBetaling);
 
     // Start: toon alle producten en een leeg mandje
     toonProducten();

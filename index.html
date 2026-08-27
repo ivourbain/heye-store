@@ -124,10 +124,17 @@
       border-radius:12px;padding:8px;background:#fff;margin:0 auto 18px;display:block}
     .betaal-gegevens{text-align:left;background:var(--achtergrond);border-radius:12px;
       padding:12px 16px;margin-bottom:14px;font-size:14px}
-    .betaal-gegevens div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--lijn)}
+    .betaal-gegevens div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--lijn);align-items:center}
     .betaal-gegevens div:last-child{border-bottom:none}
-    .betaal-gegevens span{color:var(--grijs)}
-    .betaal-gegevens strong{text-align:right;word-break:break-all}
+    .betaal-gegevens > .bg-rij > span:first-child{color:var(--grijs);flex-shrink:0}
+    .bg-waarde{display:flex;align-items:center;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+    .bg-waarde strong{color:var(--inkt);word-break:break-all;text-align:right}
+    .kopieer{border:1px solid var(--rose);background:#fff;color:var(--rose-donker);border-radius:7px;
+      padding:4px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+    .kopieer:hover{background:var(--rose);color:#fff}
+    .kopieer.ok{background:#2e7d4f;border-color:#2e7d4f;color:#fff}
+    .gsm-tip{font-size:13px;color:var(--inkt);background:#fff6f8;border:1px solid #f0d3db;
+      border-radius:10px;padding:10px 14px;margin-bottom:14px;line-height:1.5;text-align:left}
     .betaal-tip{font-size:12.5px;color:var(--grijs);margin-bottom:16px;line-height:1.5}
     .bedankt{width:64px;height:64px;border-radius:50%;background:var(--rose);color:#fff;
       font-size:34px;display:flex;align-items:center;justify-content:center;margin:6px auto 14px}
@@ -231,14 +238,20 @@
       <p class="betaal-uitleg">Open je bankapp, kies "QR-code scannen" en scan de code hieronder.
          De overschrijving is al ingevuld — je hoeft enkel te bevestigen.</p>
       <canvas id="qr-canvas" class="qr"></canvas>
+      <p class="gsm-tip">📱 <strong>Betaal je op je gsm?</strong> Scannen lukt niet op hetzelfde toestel.
+         Gebruik dan de <strong>Kopieer</strong>-knopjes hieronder: kopieer IBAN, bedrag en mededeling
+         en plak ze in een nieuwe overschrijving in je bankapp.</p>
       <div class="betaal-gegevens">
-        <div><span>Begunstigde</span><strong id="b-naam"></strong></div>
-        <div><span>IBAN</span><strong id="b-iban"></strong></div>
-        <div><span>Bedrag</span><strong id="b-bedrag"></strong></div>
-        <div><span>Mededeling</span><strong id="b-med"></strong></div>
+        <div class="bg-rij"><span>Begunstigde</span>
+          <span class="bg-waarde"><strong id="b-naam"></strong><button type="button" class="kopieer" data-doel="b-naam">Kopieer</button></span></div>
+        <div class="bg-rij"><span>IBAN</span>
+          <span class="bg-waarde"><strong id="b-iban"></strong><button type="button" class="kopieer" data-doel="b-iban">Kopieer</button></span></div>
+        <div class="bg-rij"><span>Bedrag</span>
+          <span class="bg-waarde"><strong id="b-bedrag"></strong><button type="button" class="kopieer" data-doel="b-bedrag">Kopieer</button></span></div>
+        <div class="bg-rij"><span>Mededeling</span>
+          <span class="bg-waarde"><strong id="b-med"></strong><button type="button" class="kopieer" data-doel="b-med">Kopieer</button></span></div>
       </div>
-      <p class="betaal-tip">Lukt scannen niet? Je kunt de overschrijving ook handmatig doen met
-         de gegevens hierboven. Vermeld zeker de <strong>mededeling</strong> — zo herkent Melissa jouw bestelling.</p>
+      <p class="betaal-tip">Vermeld zeker de <strong>mededeling</strong> — zo herkent Melissa jouw bestelling.</p>
       <button class="afreken" id="betaald-knop">Ik heb betaald</button>
     </div>
     <div id="betaal-stap2" style="display:none">
@@ -457,12 +470,45 @@
     function gaNaarBetaling(){
       const tekst = epcTekst(huidigTotaal, huidigeMededeling);
       tekenQR(document.getElementById("qr-canvas"), tekst);
-      document.getElementById("b-naam").textContent   = WINKEL.naam;
-      document.getElementById("b-iban").textContent   = WINKEL.iban;
-      document.getElementById("b-bedrag").textContent = euro(huidigTotaal);
-      document.getElementById("b-med").textContent    = huidigeMededeling;
+      // waarden tonen én de exacte tekst om te kopiëren klaarzetten (data-kopieer)
+      zetWaarde("b-naam",   WINKEL.naam,                                  WINKEL.naam);
+      zetWaarde("b-iban",   WINKEL.iban,                                  WINKEL.iban);
+      zetWaarde("b-bedrag", euro(huidigTotaal),  huidigTotaal.toFixed(2).replace(".", ",")); // bv. 8,70
+      zetWaarde("b-med",    huidigeMededeling,                            huidigeMededeling);
       toonStap(1);
     }
+
+    // Toon een waarde op het scherm en onthoud wat er precies gekopieerd moet worden
+    function zetWaarde(id, tonen, kopieren){
+      const el = document.getElementById(id);
+      el.textContent = tonen;
+      el.dataset.kopieer = kopieren;
+    }
+
+    // Kopieer tekst naar het klembord, met een terugval voor oudere browsers
+    async function kopieerNaarKlembord(tekst, knop){
+      try {
+        await navigator.clipboard.writeText(tekst);
+      } catch (e) {
+        const t = document.createElement("textarea");
+        t.value = tekst; t.style.position = "fixed"; t.style.opacity = "0";
+        document.body.appendChild(t); t.focus(); t.select();
+        try { document.execCommand("copy"); } catch (_) {}
+        document.body.removeChild(t);
+      }
+      const origineel = knop.textContent;
+      knop.textContent = "Gekopieerd ✓";
+      knop.classList.add("ok");
+      setTimeout(() => { knop.textContent = origineel; knop.classList.remove("ok"); }, 1500);
+    }
+
+    // Elk kopieerknopje aan zijn waarde koppelen
+    document.querySelectorAll(".kopieer").forEach(knop => {
+      knop.addEventListener("click", () => {
+        const doel = document.getElementById(knop.dataset.doel);
+        kopieerNaarKlembord(doel.dataset.kopieer || doel.textContent, knop);
+      });
+    });
 
     function sluitBetaling(){
       document.getElementById("betaal").classList.remove("open");

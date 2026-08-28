@@ -163,6 +163,8 @@
     .akkoord{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--inkt);
       margin:6px 0 16px;line-height:1.5}
     .akkoord input{margin-top:2px;flex-shrink:0}
+    .wis-link{display:inline-block;font-size:12.5px;color:var(--grijs);margin:-6px 0 14px}
+    .wis-link:hover{color:var(--rose-donker)}
     .afreken-tweede{width:100%;background:#fff;color:var(--rose-donker);border:1px solid var(--rose);
       padding:13px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px}
     .afreken-tweede:hover{background:var(--achtergrond)}
@@ -258,6 +260,9 @@
       <label class="akkoord"><input type="checkbox" name="akkoord" value="ja" required>
         <span>Ik ga akkoord met de <a href="voorwaarden.html" target="_blank">voorwaarden</a>
         en het <a href="retour.html" target="_blank">retourbeleid</a>.</span></label>
+      <label class="akkoord"><input type="checkbox" id="onthoud">
+        <span>Onthoud mijn gegevens op dit toestel, zodat ik ze niet telkens opnieuw hoef in te vullen.</span></label>
+      <a href="#" id="wis-gegevens" class="wis-link" style="display:none">Mijn bewaarde gegevens wissen</a>
       <button type="submit" class="afreken">Naar betaling →</button>
     </form>
 
@@ -326,6 +331,46 @@
     // Prijs mooi tonen als "€2,90" (Belgisch: komma als decimaalteken)
     function euro(bedrag){
       return "€" + bedrag.toFixed(2).replace(".", ",");
+    }
+
+    /* ---- Onthouden in de browser (localStorage) --------------------------
+       Dit bewaart gegevens ENKEL in de browser van de klant, op zijn eigen
+       toestel. Er wordt niets naar ons of naar derden gestuurd. */
+    const MANDJE_SLEUTEL = "melissa_mandje";
+    const KLANT_SLEUTEL  = "melissa_klant";
+
+    // Winkelmandje bewaren / terugladen (automatisch)
+    function bewaarMandje(){
+      try { localStorage.setItem(MANDJE_SLEUTEL, JSON.stringify(mandje)); } catch(e){}
+    }
+    function laadMandje(){
+      try {
+        const opgeslagen = JSON.parse(localStorage.getItem(MANDJE_SLEUTEL) || "{}");
+        Object.keys(opgeslagen).forEach(id => {
+          if (vind(id) && opgeslagen[id] > 0) mandje[id] = opgeslagen[id];  // enkel nog bestaande producten
+        });
+      } catch(e){}
+    }
+
+    // Klantgegevens bewaren / wissen / invullen (enkel met het vinkje)
+    const KLANT_VELDEN = ["naam","email","adres","postcode","gemeente","telefoon"];
+    function bewaarKlant(){
+      const data = {};
+      KLANT_VELDEN.forEach(v => { const el = document.querySelector(`[name="${v}"]`); if (el) data[v] = el.value; });
+      try { localStorage.setItem(KLANT_SLEUTEL, JSON.stringify(data)); } catch(e){}
+    }
+    function wisKlant(){ try { localStorage.removeItem(KLANT_SLEUTEL); } catch(e){} }
+    function vulKlantIn(){
+      let data = null;
+      try { data = JSON.parse(localStorage.getItem(KLANT_SLEUTEL) || "null"); } catch(e){}
+      const wisLink = document.getElementById("wis-gegevens");
+      if (data){
+        KLANT_VELDEN.forEach(v => { const el = document.querySelector(`[name="${v}"]`); if (el && data[v]) el.value = data[v]; });
+        document.getElementById("onthoud").checked = true;
+        wisLink.style.display = "inline-block";
+      } else {
+        wisLink.style.display = "none";
+      }
     }
 
     // Welke categorie is actief, en wat typte de klant in de zoekbalk
@@ -438,6 +483,8 @@
       const badge = document.getElementById("badge");
       badge.textContent = aantalStuks;
       badge.style.display = aantalStuks ? "flex" : "none";
+
+      bewaarMandje();   // mandje onthouden na elke wijziging
     }
 
     // Mandje openen / sluiten
@@ -528,6 +575,7 @@
       document.getElementById("f-bestelling").value  = bestellingSamenvatting();
       document.getElementById("f-totaal").value      = euro(huidigTotaal);
 
+      vulKlantIn();     // bewaarde gegevens alvast invullen (indien de klant dat koos)
       toonStap("form");
       document.getElementById("betaal").classList.add("open");
       document.getElementById("betaal-overlay").classList.add("open");
@@ -629,8 +677,19 @@
         // Lukt het versturen niet (bv. bij lokaal testen)? Dan gaan we toch door naar de betaling.
         console.log("Bestelling versturen mislukte (lokaal testen?):", err);
       }
+      // gegevens onthouden of net wissen, volgens het vinkje
+      if (document.getElementById("onthoud").checked) bewaarKlant(); else wisKlant();
       document.getElementById("keuze-fout").style.display = "none";
       toonStap("keuze");   // klant kiest: online betalen of overschrijving
+    });
+
+    // "Mijn bewaarde gegevens wissen"
+    document.getElementById("wis-gegevens").addEventListener("click", (e) => {
+      e.preventDefault();
+      wisKlant();
+      KLANT_VELDEN.forEach(v => { const el = document.querySelector(`[name="${v}"]`); if (el) el.value = ""; });
+      document.getElementById("onthoud").checked = false;
+      e.target.style.display = "none";
     });
 
     // De twee betaalkeuzes
@@ -652,9 +711,10 @@
       sluitBetaling();
     });
 
-    // Start: filterknoppen bouwen, alle producten tonen en een leeg mandje
+    // Start: filterknoppen bouwen, bewaard mandje terugladen en alles tonen
     maakFilters();
     toonProducten();
+    laadMandje();
     tekenMandje();
   </script>
 </body>

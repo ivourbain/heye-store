@@ -59,6 +59,20 @@
       min-width:22px;height:22px;border-radius:11px;font-size:12px;font-weight:700;
       display:flex;align-items:center;justify-content:center;padding:0 5px}
 
+    /* ---- Welkomstbanner ---- */
+    .hero{background:linear-gradient(135deg,#f7e3e8 0%,#f3d9e0 55%,#eccdd7 100%);
+      border-bottom:1px solid var(--lijn)}
+    .hero-inner{max-width:1150px;margin:0 auto;padding:40px 20px 44px;text-align:center}
+    .hero h1{font-size:30px;color:var(--rose-donker);margin-bottom:10px;line-height:1.2;text-wrap:balance}
+    .hero p{max-width:640px;margin:0 auto;color:#6b4b54;font-size:16px;line-height:1.55}
+
+    /* ---- Categoriefilters ---- */
+    .filters{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:20px}
+    .filters button{border:1px solid var(--lijn);background:var(--wit);color:var(--inkt);
+      padding:8px 16px;border-radius:30px;font-size:14px;cursor:pointer;transition:all .12s}
+    .filters button:hover{border-color:var(--rose)}
+    .filters button.actief{background:var(--rose);border-color:var(--rose);color:#fff;font-weight:600}
+
     /* ---- Productrooster ---- */
     main{max-width:1150px;margin:0 auto;padding:26px 20px 60px}
     .telling{color:var(--grijs);font-size:14px;margin-bottom:18px}
@@ -177,7 +191,17 @@
     </div>
   </header>
 
+  <!-- Welkomstbanner -->
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Mooie haar- &amp; verzorgingsaccessoires</h1>
+      <p>Ontdek de collectie van Melissa — haarclips, kammen, borstels, kwasten en meer.
+         Zorgvuldig gekozen, eerlijk geprijsd en rechtstreeks bij jou thuis geleverd.</p>
+    </div>
+  </section>
+
   <main>
+    <div class="filters" id="filters"></div>
     <p class="telling" id="telling"></p>
     <div class="rooster" id="rooster"></div>
     <p class="leeg" id="geen" style="display:none">Geen producten gevonden. Probeer een andere zoekterm.</p>
@@ -304,12 +328,40 @@
       return "€" + bedrag.toFixed(2).replace(".", ",");
     }
 
-    // Teken alle productkaarten (optioneel gefilterd op een zoekterm)
-    function toonProducten(zoekterm = ""){
+    // Welke categorie is actief, en wat typte de klant in de zoekbalk
+    let actieveCategorie = "Alles";
+    let huidigeZoekterm = "";
+    const CAT_VOLGORDE = ["Haarclips","Haarborstels","Haarkammen","Haarelastieken",
+                          "Haarbanden","Make-up","Pincetten","Nagelverzorging","Sponzen","Accessoires"];
+
+    // Bouw de filterknoppen: "Alles" + elke categorie die echt voorkomt
+    function maakFilters(){
+      const aanwezig = new Set(MELISSA_PRODUCTEN.map(p => p.categorie));
+      const cats = ["Alles", ...CAT_VOLGORDE.filter(c => aanwezig.has(c))];
+      const vak = document.getElementById("filters");
+      vak.innerHTML = "";
+      cats.forEach(cat => {
+        const knop = document.createElement("button");
+        knop.textContent = cat;
+        if (cat === actieveCategorie) knop.classList.add("actief");
+        knop.addEventListener("click", () => {
+          actieveCategorie = cat;
+          document.querySelectorAll("#filters button").forEach(b => b.classList.remove("actief"));
+          knop.classList.add("actief");
+          toonProducten();
+        });
+        vak.appendChild(knop);
+      });
+    }
+
+    // Teken de productkaarten, gefilterd op categorie én zoekterm
+    function toonProducten(){
       const rooster = document.getElementById("rooster");
-      const term = zoekterm.trim().toLowerCase();
+      const term = huidigeZoekterm.trim().toLowerCase();
       const lijst = MELISSA_PRODUCTEN.filter(p =>
-        p.naam && p.naam.toLowerCase().includes(term)
+        p.naam &&
+        (actieveCategorie === "Alles" || p.categorie === actieveCategorie) &&
+        p.naam.toLowerCase().includes(term)
       );
 
       rooster.innerHTML = "";                       // maak eerst leeg
@@ -327,8 +379,9 @@
       });
 
       // teksten en lege-staat bijwerken
-      document.getElementById("telling").textContent = `${lijst.length} producten`;
-      document.getElementById("geen").style.display = lijst.length ? "none" : "block";
+      const n = lijst.length;
+      document.getElementById("telling").textContent = `${n} product${n === 1 ? "" : "en"}`;
+      document.getElementById("geen").style.display = n ? "none" : "block";
     }
 
     // Zoek een product terug op zijn id
@@ -397,7 +450,7 @@
     document.getElementById("rooster").addEventListener("click", e => {
       if (e.target.matches("button[data-id]")) voegToe(e.target.dataset.id);
     });
-    document.getElementById("zoekveld").addEventListener("input", e => toonProducten(e.target.value));
+    document.getElementById("zoekveld").addEventListener("input", e => { huidigeZoekterm = e.target.value; toonProducten(); });
     document.getElementById("open-mandje").addEventListener("click", () => zetMandje(true));
     document.getElementById("sluit-mandje").addEventListener("click", () => zetMandje(false));
     document.getElementById("overlay").addEventListener("click", () => zetMandje(false));
@@ -599,7 +652,8 @@
       sluitBetaling();
     });
 
-    // Start: toon alle producten en een leeg mandje
+    // Start: filterknoppen bouwen, alle producten tonen en een leeg mandje
+    maakFilters();
     toonProducten();
     tekenMandje();
   </script>

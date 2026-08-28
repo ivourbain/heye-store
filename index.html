@@ -116,7 +116,10 @@
       border-radius:7px;cursor:pointer;font-size:16px;line-height:1}
     .aantal span{min-width:22px;text-align:center;font-weight:600}
     .mandje .voet{padding:18px 20px;border-top:1px solid var(--lijn)}
-    .totaalregel{display:flex;justify-content:space-between;font-size:19px;font-weight:700;margin-bottom:4px}
+    .regelrij{display:flex;justify-content:space-between;font-size:14px;color:var(--grijs);margin-bottom:4px}
+    .gratis-tip{font-size:12.5px;color:var(--rose-donker);background:#fff6f8;border-radius:8px;
+      padding:6px 10px;margin:6px 0 8px;text-align:center}
+    .totaalregel{display:flex;justify-content:space-between;font-size:19px;font-weight:700;margin-bottom:4px;margin-top:6px}
     .btw{font-size:12px;color:var(--grijs);margin-bottom:14px}
     .afreken{width:100%;background:var(--rose);color:#fff;border:none;padding:14px;
       border-radius:12px;font-size:16px;font-weight:600;cursor:pointer}
@@ -172,10 +175,10 @@
 
     /* ---- Voetbalk met juridische links ---- */
     footer{border-top:1px solid var(--lijn);background:var(--wit);margin-top:20px}
-    .voet{max-width:1150px;margin:0 auto;padding:22px 20px;display:flex;gap:14px;
+    footer .voet{max-width:1150px;margin:0 auto;padding:22px 20px;display:flex;gap:14px;
       flex-wrap:wrap;justify-content:space-between;align-items:center;font-size:13px;color:var(--grijs)}
-    .voet a{color:var(--grijs);text-decoration:none;margin-right:16px}
-    .voet a:hover{color:var(--rose-donker)}
+    footer .voet a{color:var(--grijs);text-decoration:none;margin-right:16px}
+    footer .voet a:hover{color:var(--rose-donker)}
   </style>
 </head>
 
@@ -227,6 +230,9 @@
     </div>
     <div class="items" id="mand-items"></div>
     <div class="voet">
+      <div class="regelrij"><span>Subtotaal</span><span id="subtotaal">€0,00</span></div>
+      <div class="regelrij"><span>Verzending</span><span id="verzending">—</span></div>
+      <p class="gratis-tip" id="gratis-tip" style="display:none"></p>
       <div class="totaalregel"><span>Totaal</span><span id="totaal">€0,00</span></div>
       <div class="btw">incl. 21% btw</div>
       <button class="afreken" id="afreken" disabled>Bestellen</button>
@@ -322,6 +328,17 @@
       iban: "BE84731068044259",            // jouw eigen IBAN
       bic:  ""                             // mag leeg blijven
     };
+
+    // ⚙️ VERZENDKOSTEN — pas gerust aan wanneer je wil
+    const VERZENDING = {
+      kosten: 4.95,        // verzendkosten per bestelling
+      gratisVanaf: 40      // gratis verzending vanaf dit bedrag (subtotaal)
+    };
+    // Berekent de verzendkost voor een bepaald subtotaal
+    function verzendkostVoor(subtotaal){
+      if (subtotaal <= 0 || subtotaal >= VERZENDING.gratisVanaf) return 0;
+      return VERZENDING.kosten;
+    }
 
     /* ---- 3) DE WERKING ------------------------------------------------
        Het mandje is een lijst in het geheugen: per product-id houden
@@ -476,7 +493,23 @@
         });
       }
 
-      document.getElementById("totaal").textContent = euro(totaal);
+      // subtotaal (= producten) + verzending = eindtotaal
+      const subtotaal = totaal;
+      const verzend = verzendkostVoor(subtotaal);
+      document.getElementById("subtotaal").textContent = euro(subtotaal);
+      document.getElementById("verzending").textContent =
+        subtotaal === 0 ? "—" : (verzend === 0 ? "Gratis" : euro(verzend));
+      document.getElementById("totaal").textContent = euro(subtotaal + verzend);
+
+      // tip: nog €X tot gratis verzending
+      const tip = document.getElementById("gratis-tip");
+      if (subtotaal > 0 && verzend > 0){
+        tip.textContent = `Nog ${euro(VERZENDING.gratisVanaf - subtotaal)} tot gratis verzending!`;
+        tip.style.display = "block";
+      } else {
+        tip.style.display = "none";
+      }
+
       document.getElementById("afreken").disabled = (aantalStuks === 0);
 
       // het bolletje op de mandknop
@@ -555,19 +588,31 @@
       document.getElementById("betaal-stap2").style.display = (naam === "bedankt") ? "block" : "none";
     }
 
+    // Subtotaal van de producten (zonder verzending)
+    function subtotaalMandje(){
+      let s = 0;
+      Object.keys(mandje).forEach(id => s += vind(id).prijs_incl_btw * mandje[id]);
+      return s;
+    }
+
     // Korte samenvatting van het mandje als tekst (voor in de bestelling-mail)
     function bestellingSamenvatting(){
-      return Object.keys(mandje).map(id => {
+      const regels = Object.keys(mandje).map(id => {
         const p = vind(id), n = mandje[id];
         return `${n}x ${p.naam.replace("Melissa ","")} (à ${euro(p.prijs_incl_btw)})`;
-      }).join(" | ");
+      });
+      const subtotaal = subtotaalMandje();
+      const verzend = verzendkostVoor(subtotaal);
+      return regels.join(" | ") +
+        ` || Subtotaal ${euro(subtotaal)} + Verzending ${verzend === 0 ? "Gratis" : euro(verzend)}` +
+        ` = Totaal ${euro(subtotaal + verzend)}`;
     }
 
     // STAP 0: het gegevensformulier openen
     function openBetaling(){
-      huidigTotaal = 0;
-      Object.keys(mandje).forEach(id => huidigTotaal += vind(id).prijs_incl_btw * mandje[id]);
-      if (huidigTotaal <= 0) return;
+      const subtotaal = subtotaalMandje();
+      if (subtotaal <= 0) return;
+      huidigTotaal = subtotaal + verzendkostVoor(subtotaal);   // producten + verzending
 
       huidigeMededeling = maakBestelnummer();
       // verborgen velden vullen zodat ze meegaan met de bestelling

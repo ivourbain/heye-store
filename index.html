@@ -66,6 +66,15 @@
     .hero h1{font-size:30px;color:var(--rose-donker);margin-bottom:10px;line-height:1.2;text-wrap:balance}
     .hero p{max-width:640px;margin:0 auto;color:#6b4b54;font-size:16px;line-height:1.55}
 
+    /* ---- Afdelingen (Melissa / Montana / Diverse) ---- */
+    .afdelingen{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;
+      padding-bottom:16px;border-bottom:1px solid var(--lijn)}
+    .afdelingen button{border:1px solid var(--lijn);background:var(--wit);color:var(--inkt);
+      padding:10px 20px;border-radius:8px;font-size:15px;cursor:pointer;transition:all .12s}
+    .afdelingen button:hover{border-color:var(--rose)}
+    .afdelingen button.actief{background:var(--rose-donker);border-color:var(--rose-donker);
+      color:#fff;font-weight:600}
+
     /* ---- Categoriefilters ---- */
     .filters{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:20px}
     .filters button{border:1px solid var(--lijn);background:var(--wit);color:var(--inkt);
@@ -206,6 +215,7 @@
   </section>
 
   <main>
+    <div class="afdelingen" id="afdelingen" style="display:none"></div>
     <div class="filters" id="filters"></div>
     <p class="telling" id="telling"></p>
     <div class="rooster" id="rooster"></div>
@@ -390,16 +400,79 @@
       }
     }
 
-    // Welke categorie is actief, en wat typte de klant in de zoekbalk
+    // De afdelingen van de winkel. Links de interne sleutel (die staat in products.js),
+    // rechts wat de klant leest. Wil je later een andere naam tonen? Pas hier één woord aan.
+    const AFDELINGEN = {
+      melissa: "Melissa Haarmode",
+      montana: "Montana Brillen",
+      diverse: "Diverse"
+    };
+    const AFDELING_VOLGORDE = ["melissa", "montana", "diverse"];
+
+    // Welke afdeling en categorie zijn actief, en wat typte de klant in de zoekbalk
+    let actieveAfdeling = "alles";
     let actieveCategorie = "Alles";
     let huidigeZoekterm = "";
+
+    // Volgorde waarin de categorieknopjes verschijnen. Staat een categorie hier niet in
+    // (bv. later "Zonnebrillen"), dan komt ze gewoon achteraan — geen fout, geen aanpassing nodig.
     const CAT_VOLGORDE = ["Haarclips","Haarborstels","Haarkammen","Haarelastieken",
                           "Haarbanden","Make-up","Pincetten","Nagelverzorging","Sponzen","Accessoires"];
 
-    // Bouw de filterknoppen: "Alles" + elke categorie die echt voorkomt
+    // Heeft een product nog geen afdeling? Dan hoort het bij Melissa.
+    // Zo blijft de huidige productlijst gewoon werken zolang het veld er nog niet in staat.
+    function afdelingVan(p){ return p.afdeling || "melissa"; }
+
+    // De producten van de gekozen afdeling. Dit is de basis voor zowel
+    // de categorieknopjes als het productrooster — daarom staan ze altijd samen goed.
+    function productenInAfdeling(){
+      return MELISSA_PRODUCTEN.filter(p =>
+        p.naam && (actieveAfdeling === "alles" || afdelingVan(p) === actieveAfdeling)
+      );
+    }
+
+    // Bouw de afdelingsknoppen. Is er maar één afdeling met producten in?
+    // Dan blijft de balk verborgen — kiezen uit één ding heeft geen zin.
+    function maakAfdelingen(){
+      const vak = document.getElementById("afdelingen");
+      const aanwezig = new Set(MELISSA_PRODUCTEN.filter(p => p.naam).map(afdelingVan));
+      const sleutels = AFDELING_VOLGORDE.filter(s => aanwezig.has(s));
+
+      if (sleutels.length < 2){
+        vak.style.display = "none";
+        actieveAfdeling = "alles";
+        return;
+      }
+      vak.style.display = "flex";
+      vak.innerHTML = "";
+
+      [["alles", "Alles"], ...sleutels.map(s => [s, AFDELINGEN[s] || s])]
+        .forEach(([sleutel, naam]) => {
+          const knop = document.createElement("button");
+          knop.textContent = naam;
+          if (sleutel === actieveAfdeling) knop.classList.add("actief");
+          knop.addEventListener("click", () => {
+            actieveAfdeling = sleutel;
+            document.querySelectorAll("#afdelingen button").forEach(b => b.classList.remove("actief"));
+            knop.classList.add("actief");
+            maakFilters();      // andere afdeling = andere categorieknopjes
+            toonProducten();
+          });
+          vak.appendChild(knop);
+        });
+    }
+
+    // Bouw de categorieknoppen uit de categorieën die in DEZE afdeling echt voorkomen.
     function maakFilters(){
-      const aanwezig = new Set(MELISSA_PRODUCTEN.map(p => p.categorie));
-      const cats = ["Alles", ...CAT_VOLGORDE.filter(c => aanwezig.has(c))];
+      const aanwezig = [...new Set(productenInAfdeling().map(p => p.categorie).filter(Boolean))];
+      const bekend = CAT_VOLGORDE.filter(c => aanwezig.includes(c));
+      const nieuw  = aanwezig.filter(c => !CAT_VOLGORDE.includes(c)).sort();
+      const cats = ["Alles", ...bekend, ...nieuw];
+
+      // Bestond de gekozen categorie niet in deze afdeling? Val netjes terug op "Alles",
+      // anders zou de klant naar een leeg rooster kijken zonder te snappen waarom.
+      if (!cats.includes(actieveCategorie)) actieveCategorie = "Alles";
+
       const vak = document.getElementById("filters");
       vak.innerHTML = "";
       cats.forEach(cat => {
@@ -420,8 +493,7 @@
     function toonProducten(){
       const rooster = document.getElementById("rooster");
       const term = huidigeZoekterm.trim().toLowerCase();
-      const lijst = MELISSA_PRODUCTEN.filter(p =>
-        p.naam &&
+      const lijst = productenInAfdeling().filter(p =>
         (actieveCategorie === "Alles" || p.categorie === actieveCategorie) &&
         p.naam.toLowerCase().includes(term)
       );
@@ -759,7 +831,8 @@
       sluitBetaling();
     });
 
-    // Start: filterknoppen bouwen, bewaard mandje terugladen en alles tonen
+    // Start: afdelings- en filterknoppen bouwen, bewaard mandje terugladen en alles tonen
+    maakAfdelingen();
     maakFilters();
     toonProducten();
     laadMandje();

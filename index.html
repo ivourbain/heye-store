@@ -658,6 +658,9 @@
         });
         const data = await resp.json();
         if (data.checkoutUrl) {
+          // Onthoud kort het betaal-id, zodat de Bedankt-pagina bij terugkeer
+          // aan Mollie kan vragen of er écht betaald is (dan pas mandje leegmaken).
+          try { localStorage.setItem("melissa_betaling", data.betaalId || ""); } catch(e){}
           window.location.href = data.checkoutUrl;   // door naar de betaalpagina van Mollie
           return;
         }

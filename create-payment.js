@@ -68,10 +68,14 @@ exports.handler = async (event) => {
       };
     }
 
-    // De link waar de klant naartoe moet om te betalen
+    // De link waar de klant naartoe moet om te betalen, plus het betaal-id.
+    // Dat id gebruiken we straks om bij Mollie te controleren of er écht betaald is.
     return {
       statusCode: 200,
-      body: JSON.stringify({ checkoutUrl: resultaat._links.checkout.href })
+      body: JSON.stringify({
+        checkoutUrl: resultaat._links.checkout.href,
+        betaalId: resultaat.id
+      })
     };
   } catch (e) {
     return { statusCode: 502, body: JSON.stringify({ error: "Kon Mollie niet bereiken" }) };

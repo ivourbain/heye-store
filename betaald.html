@@ -18,6 +18,8 @@
       padding:40px 34px;max-width:460px;text-align:center;box-shadow:0 8px 30px rgba(120,70,85,.07)}
     .vink{width:70px;height:70px;border-radius:50%;background:var(--rose);color:#fff;
       font-size:38px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+    .vink.wacht{background:#e7dfe2;color:var(--rose-donker)}
+    .vink.open{background:#f3d38b;color:#8a6d1f}
     h1{font-size:24px;margin-bottom:12px}
     p{color:var(--grijs);font-size:15px;margin-bottom:14px}
     .nummer{display:inline-block;background:var(--achtergrond);border:1px solid var(--lijn);
@@ -25,27 +27,98 @@
     .terug{display:inline-block;background:var(--rose);color:#fff;text-decoration:none;
       padding:12px 24px;border-radius:12px;font-weight:600}
     .terug:hover{background:var(--rose-donker)}
+    .verborgen{display:none}
   </style>
 </head>
 <body>
   <header><div class="balk"><a class="logo" href="index.html">MELISSA</a></div></header>
   <main>
-    <div class="kaart">
+
+    <!-- 1) Even geduld terwijl we bij Mollie de betaling controleren -->
+    <div class="kaart" id="laden">
+      <div class="vink wacht">…</div>
+      <h1>Je betaling controleren…</h1>
+      <p>Een ogenblik geduld, we halen de status van je betaling op.</p>
+    </div>
+
+    <!-- 2) Betaling gelukt -->
+    <div class="kaart verborgen" id="gelukt">
       <div class="vink">✓</div>
       <h1>Bedankt voor je bestelling!</h1>
-      <p>We hebben je bestelling goed ontvangen. Zodra je betaling verwerkt is,
-         maken we alles klaar en verzenden we het naar je.</p>
+      <p>We hebben je betaling goed ontvangen. We maken alles klaar en verzenden het naar je.</p>
       <div class="nummer" id="bestelnummer">—</div>
       <p>Bewaar dit bestelnummer — zo kunnen we je bestelling altijd terugvinden.</p>
       <a class="terug" href="index.html">← Terug naar de winkel</a>
     </div>
+
+    <!-- 3) Betaling niet voltooid (geannuleerd, mislukt of nog niet afgerond) -->
+    <div class="kaart verborgen" id="nietvoltooid">
+      <div class="vink open">!</div>
+      <h1>Betaling niet voltooid</h1>
+      <p id="nietvoltooid-tekst">Je betaling is niet afgerond. Er is niets aangerekend en
+         je winkelmandje staat nog voor je klaar — je kunt gerust opnieuw proberen.</p>
+      <a class="terug" href="index.html">← Terug naar mijn mandje</a>
+    </div>
+
   </main>
+
   <script>
-    // Het bestelnummer uit de webadres-parameter halen en tonen
+    // Het bestelnummer uit het webadres halen (voor de bevestiging)
     const params = new URLSearchParams(window.location.search);
-    const nr = params.get("bestelnummer");
-    if (nr) document.getElementById("bestelnummer").textContent = nr;
-    else document.getElementById("bestelnummer").style.display = "none";
+    const bestelnummer = params.get("bestelnummer");
+
+    // Welke kaart tonen we?
+    function toon(id){
+      ["laden","gelukt","nietvoltooid"].forEach(k => {
+        document.getElementById(k).classList.toggle("verborgen", k !== id);
+      });
+    }
+
+    // Bij een geslaagde betaling: mandje + onthouden betaal-id wissen
+    function maakMandjeLeeg(){
+      try { localStorage.removeItem("melissa_mandje"); } catch(e){}
+      try { localStorage.removeItem("melissa_betaling"); } catch(e){}
+    }
+
+    async function controleer(){
+      // Het betaal-id dat de winkel vlak vóór het doorsturen bewaarde
+      let betaalId = "";
+      try { betaalId = localStorage.getItem("melissa_betaling") || ""; } catch(e){}
+
+      // Geen id gevonden? Dan kunnen we niets controleren. We tonen de bevestiging
+      // maar laten het mandje voor de zekerheid ongemoeid.
+      if (!betaalId) {
+        if (bestelnummer) document.getElementById("bestelnummer").textContent = bestelnummer;
+        else document.getElementById("bestelnummer").style.display = "none";
+        toon("gelukt");
+        return;
+      }
+
+      try {
+        const resp = await fetch("/.netlify/functions/check-payment?id=" + encodeURIComponent(betaalId));
+        const data = await resp.json();
+
+        if (data.betaald) {
+          // Écht betaald → mandje leegmaken en bedanken
+          maakMandjeLeeg();
+          if (bestelnummer) document.getElementById("bestelnummer").textContent = bestelnummer;
+          else document.getElementById("bestelnummer").style.display = "none";
+          toon("gelukt");
+        } else {
+          // Niet (of nog niet) betaald → mandje blijft staan
+          toon("nietvoltooid");
+        }
+      } catch (e) {
+        // Konden we de status niet ophalen? Dan het mandje niet leegmaken,
+        // en de klant vriendelijk vragen het even na te kijken.
+        document.getElementById("nietvoltooid-tekst").textContent =
+          "We konden de status van je betaling niet ophalen. Is er geld afgeschreven, " +
+          "dan is je bestelling in orde. Zo niet, dan staat je mandje nog klaar om opnieuw te proberen.";
+        toon("nietvoltooid");
+      }
+    }
+
+    controleer();
   </script>
 </body>
 </html>

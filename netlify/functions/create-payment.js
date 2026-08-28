@@ -1,3 +1,10 @@
+// ============================================================
+//  create-payment.js  —  Netlify Function
+//  Maakt een betaling aan bij Mollie en geeft de betaal-link terug.
+//  Deze code draait op de SERVER van Netlify, niet in de browser,
+//  zodat je geheime Mollie-sleutel nooit zichtbaar is voor bezoekers.
+// ============================================================
+
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
@@ -45,10 +52,20 @@ exports.handler = async (event) => {
     const resultaat = await resp.json();
 
     if (!resp.ok) {
-      return { statusCode: 502, body: JSON.stringify({ error: resultaat.detail || "Mollie gaf een fout terug" }) };
+      return {
+        statusCode: 502,
+        body: JSON.stringify({ error: resultaat.detail || "Mollie gaf een fout terug" })
+      };
     }
 
-    return { statusCode: 200, body: JSON.stringify({ checkoutUrl: resultaat._links.checkout.href }) };
+    // De betaal-link én het betaal-id (dat id gebruikt de Bedankt-pagina voor de controle)
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        checkoutUrl: resultaat._links.checkout.href,
+        betaalId: resultaat.id
+      })
+    };
   } catch (e) {
     return { statusCode: 502, body: JSON.stringify({ error: "Kon Mollie niet bereiken" }) };
   }

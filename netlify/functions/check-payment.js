@@ -1,62 +1,31 @@
 // ============================================================
-//  create-payment.js  —  Netlify Function
-//  Maakt een betaling aan bij Mollie en geeft de betaal-link terug.
-//  Deze code draait op de SERVER van Netlify, niet in de browser,
-//  zodat je geheime Mollie-sleutel nooit zichtbaar is voor bezoekers.
+//  check-payment.js  —  Netlify Function
+//  Vraagt aan Mollie wat de status van een betaling is.
+//  De Bedankt-pagina roept dit aan om te weten of er ÉCHT betaald is,
+//  vóór ze het winkelmandje leegmaakt.
 //
-//  De sleutel zet je in Netlify onder:
-//     Project configuration → Environment variables → MOLLIE_API_KEY
-//  (begin met je TEST-sleutel: test_xxxxx , later je live-sleutel)
+//  Draait op de SERVER van Netlify (net als create-payment.js),
+//  zodat je geheime Mollie-sleutel nooit in de browser terechtkomt.
 // ============================================================
 
 exports.handler = async (event) => {
-  // Enkel POST-verzoeken toelaten
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
-  }
-
   const apiKey = process.env.MOLLIE_API_KEY;
   if (!apiKey) {
     return { statusCode: 500, body: JSON.stringify({ error: "Mollie-sleutel ontbreekt op de server" }) };
   }
 
-  // Gegevens uit de bestelling lezen
-  let data;
-  try {
-    data = JSON.parse(event.body || "{}");
-  } catch (e) {
-    return { statusCode: 400, body: JSON.stringify({ error: "Ongeldige gegevens" }) };
+  // Het betaal-id komt mee als ?id=tr_xxxxx
+  const betaalId = String((event.queryStringParameters || {}).id || "");
+
+  // Kleine veiligheidscheck: een Mollie-betaal-id begint met "tr_" en bevat
+  // enkel letters en cijfers. Zo sturen we geen rare invoer door.
+  if (!/^tr_[A-Za-z0-9]+$/.test(betaalId)) {
+    return { statusCode: 400, body: JSON.stringify({ error: "Ongeldig betaal-id" }) };
   }
 
-  const bedrag = Number(data.bedrag);
-  const bestelnummer = String(data.bestelnummer || "").slice(0, 40);
-  const email = String(data.email || "").slice(0, 100);
-
-  if (!(bedrag > 0) || !bestelnummer) {
-    return { statusCode: 400, body: JSON.stringify({ error: "Bedrag of bestelnummer ontbreekt" }) };
-  }
-
-  // Adres van je eigen site (Netlify vult process.env.URL automatisch in)
-  const siteUrl = process.env.URL || `https://${event.headers.host}`;
-
-  // De betaling die we bij Mollie aanmaken
-  const betaling = {
-    amount: { currency: "EUR", value: bedrag.toFixed(2) },   // bv. "12.90"
-    description: `Melissa bestelling ${bestelnummer}`,
-    redirectUrl: `${siteUrl}/betaald.html?bestelnummer=${encodeURIComponent(bestelnummer)}`,
-    metadata: { bestelnummer: bestelnummer, email: email }
-    // 'method' laten we open → Mollie toont de klant zijn betaalmethodes
-    // (Bancontact, kaart, …). Zet je dit op "bancontact", dan gaat het meteen daarheen.
-  };
-
   try {
-    const resp = await fetch("https://api.mollie.com/v2/payments", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(betaling)
+    const resp = await fetch(`https://api.mollie.com/v2/payments/${betaalId}`, {
+      headers: { "Authorization": `Bearer ${apiKey}` }
     });
 
     const resultaat = await resp.json();
@@ -68,13 +37,12 @@ exports.handler = async (event) => {
       };
     }
 
-    // De link waar de klant naartoe moet om te betalen, plus het betaal-id.
-    // Dat id gebruiken we straks om bij Mollie te controleren of er écht betaald is.
+    // We geven enkel de status door (bv. "paid", "open", "canceled", "expired", "failed").
     return {
       statusCode: 200,
       body: JSON.stringify({
-        checkoutUrl: resultaat._links.checkout.href,
-        betaalId: resultaat.id
+        status: resultaat.status,
+        betaald: resultaat.status === "paid"
       })
     };
   } catch (e) {

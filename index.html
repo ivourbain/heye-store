@@ -188,6 +188,36 @@
       flex-wrap:wrap;justify-content:space-between;align-items:center;font-size:13px;color:var(--grijs)}
     footer .voet a{color:var(--grijs);text-decoration:none;margin-right:16px}
     footer .voet a:hover{color:var(--rose-donker)}
+    /* ---- Bestelbon (op het scherm én op papier) ---- */
+    .bon{text-align:left;border:1px solid var(--lijn);border-radius:12px;
+      padding:18px;margin:18px 0 4px;background:#fff}
+    .bon-kop{display:flex;justify-content:space-between;align-items:flex-start;
+      gap:12px;border-bottom:1px solid var(--lijn);padding-bottom:10px;margin-bottom:12px}
+    .bon-titel{font-size:17px;font-weight:700}
+    .bon-nr{text-align:right;font-weight:700;font-size:14px}
+    .bon-nr span{font-weight:400;color:var(--grijs);font-size:13px}
+    .bon-tabel{width:100%;border-collapse:collapse;font-size:14px}
+    .bon-tabel th{text-align:left;font-size:12px;text-transform:uppercase;
+      letter-spacing:.04em;color:var(--grijs);padding-bottom:6px;font-weight:600}
+    .bon-tabel td{padding:5px 0;border-top:1px solid var(--lijn);vertical-align:top}
+    .bon-tabel td:first-child{width:34px;color:var(--grijs)}
+    .bon-bedrag{text-align:right;white-space:nowrap}
+    .bon-tabel tfoot td{border-top:none;padding:3px 0;color:var(--grijs)}
+    .bon-tabel tfoot tr:first-child td{border-top:1px solid var(--lijn);padding-top:8px}
+    .bon-totaal td{font-weight:700;color:var(--inkt);font-size:16px;padding-top:6px !important}
+    .bon-betaal{font-size:14px;margin-top:12px;padding:10px 12px;
+      background:var(--achtergrond);border-radius:8px;line-height:1.5}
+    .bon-adres{font-size:14px;margin-top:12px;color:var(--grijs);line-height:1.5}
+    #bon-print{display:none}
+
+    @media print{
+      body > *{display:none !important}
+      #bon-print{display:block !important;padding:0;max-width:none}
+      #bon-print .bon-kop{border-bottom:1px solid #999}
+      #bon-print .bon-betaal{background:none;border:1px solid #999;border-radius:0}
+      @page{margin:18mm}
+    }
+
   </style>
 </head>
 
@@ -317,6 +347,8 @@
       <h2>Bedankt voor je bestelling!</h2>
       <p class="betaal-uitleg">Zodra Melissa je betaling ziet binnenkomen, wordt je bestelling
          klaargemaakt en verzonden. Je mededeling was <strong id="b-med2"></strong>.</p>
+      <div class="bon" id="bon"></div>
+      <button type="button" class="afreken-tweede" id="print-knop">🖨 Afdrukken of bewaren als pdf</button>
       <button class="afreken" id="klaar-knop">Sluiten</button>
     </div>
   </div>
@@ -667,20 +699,99 @@
       return s;
     }
 
-    // Korte samenvatting van het mandje als tekst (voor in de bestelling-mail).
-    // "plaats" is de plek in het magazijn; die komt uit products.js en staat
-    // alleen in deze mail, nooit op de site. Ontbreekt ze, dan valt [plaats ?]
-    // op zodat je meteen ziet welk product nog geen plek heeft gekregen.
+    // PAKBON — dit gaat naar Ivo (Netlify-notificatie), niet naar de klant.
+    // Eén product per regel, gesorteerd op magazijnplaats, zodat je het rek
+    // in één richting kunt aflopen in plaats van heen en weer.
     function bestellingSamenvatting(){
       const regels = Object.keys(mandje).map(id => {
-        const p = vind(id), n = mandje[id];
-        return `${n}x ${p.naam.replace("Melissa ","")} [plaats ${p.plaats || "?"}] (à ${euro(p.prijs_incl_btw)})`;
+        const p = vind(id);
+        const plaats = p.plaats || "";
+        return {
+          sorteer: plaats === "" ? 999999 : (Number(plaats) || 999999),
+          tekst: `${String(plaats || "?").padStart(3, " ")}  ${String(mandje[id]) + "x"}  `
+               + `${p.naam.replace("Melissa ","")}  (${p.id}, à ${euro(p.prijs_incl_btw)})`
+        };
       });
+      regels.sort((a, b) => a.sorteer - b.sorteer);
+
       const subtotaal = subtotaalMandje();
       const verzend = verzendkostVoor(subtotaal);
-      return regels.join(" | ") +
-        ` || Subtotaal ${euro(subtotaal)} + Verzending ${verzend === 0 ? "Gratis" : euro(verzend)}` +
-        ` = Totaal ${euro(subtotaal + verzend)}`;
+      const aantalStuks = Object.keys(mandje).reduce((s, id) => s + mandje[id], 0);
+
+      return "PLAATS  AANTAL  PRODUCT\n"
+        + regels.map(r => r.tekst).join("\n")
+        + `\n\n${aantalStuks} stuks in ${regels.length} soorten`
+        + `\nSubtotaal ${euro(subtotaal)} + Verzending ${verzend === 0 ? "gratis" : euro(verzend)}`
+        + ` = TOTAAL ${euro(subtotaal + verzend)}`;
+    }
+
+    // De bestelbon voor de KLANT bewaren, zodat het bedankscherm (en na een
+    // Mollie-betaling ook betaald.html) kan tonen wat er precies besteld is.
+    // Staat los van het mandje: dat wordt leeggemaakt, de bon blijft.
+    function bewaarBestelling(betaalwijze){
+      const subtotaal = subtotaalMandje();
+      const verzend = verzendkostVoor(subtotaal);
+      const bon = {
+        nummer: huidigeMededeling,
+        datum: new Date().toLocaleDateString("nl-BE", {day:"numeric", month:"long", year:"numeric"}),
+        betaalwijze: betaalwijze,
+        regels: Object.keys(mandje).map(id => {
+          const p = vind(id);
+          return { aantal: mandje[id], naam: p.naam.replace("Melissa ",""), stuk: p.prijs_incl_btw };
+        }),
+        subtotaal: subtotaal,
+        verzending: verzend,
+        totaal: subtotaal + verzend,
+        klant: {
+          naam:     (document.querySelector('[name="naam"]')     || {}).value || "",
+          adres:    (document.querySelector('[name="adres"]')    || {}).value || "",
+          postcode: (document.querySelector('[name="postcode"]') || {}).value || "",
+          gemeente: (document.querySelector('[name="gemeente"]') || {}).value || ""
+        },
+        iban: WINKEL.iban,
+        winkel: WINKEL.naam
+      };
+      try { localStorage.setItem("melissa_bestelbon", JSON.stringify(bon)); } catch(e){}
+      return bon;
+    }
+
+    // De bon als HTML. Wordt twee keer gebruikt: op het scherm en op papier.
+    function bonHTML(bon){
+      const rijen = bon.regels.map(r =>
+        `<tr><td>${r.aantal}&times;</td><td>${r.naam}</td>` +
+        `<td class="bon-bedrag">${euro(r.stuk)}</td>` +
+        `<td class="bon-bedrag">${euro(r.stuk * r.aantal)}</td></tr>`).join("");
+
+      const betaalblok = bon.betaalwijze === "online"
+        ? `<p class="bon-betaal">Betaald via Bancontact of kaart.</p>`
+        : `<p class="bon-betaal">Schrijf <strong>${euro(bon.totaal)}</strong> over op
+             <strong>${bon.iban}</strong> (${bon.winkel}) met mededeling
+             <strong>${bon.nummer}</strong>.</p>`;
+
+      return `
+        <div class="bon-kop">
+          <div class="bon-titel">Bestelbevestiging</div>
+          <div class="bon-nr">${bon.nummer}<br><span>${bon.datum}</span></div>
+        </div>
+        <table class="bon-tabel">
+          <thead><tr><th></th><th>Product</th><th class="bon-bedrag">Per stuk</th><th class="bon-bedrag">Totaal</th></tr></thead>
+          <tbody>${rijen}</tbody>
+          <tfoot>
+            <tr><td colspan="3">Subtotaal</td><td class="bon-bedrag">${euro(bon.subtotaal)}</td></tr>
+            <tr><td colspan="3">Verzending</td><td class="bon-bedrag">${bon.verzending === 0 ? "gratis" : euro(bon.verzending)}</td></tr>
+            <tr class="bon-totaal"><td colspan="3">Totaal</td><td class="bon-bedrag">${euro(bon.totaal)}</td></tr>
+          </tfoot>
+        </table>
+        ${betaalblok}
+        <div class="bon-adres"><strong>Leveradres</strong><br>
+          ${bon.klant.naam}<br>${bon.klant.adres}<br>${bon.klant.postcode} ${bon.klant.gemeente}</div>`;
+    }
+
+    // Bon tonen op het bedankscherm én klaarzetten om af te drukken.
+    function toonBon(bon){
+      const html = bonHTML(bon);
+      document.getElementById("bon").innerHTML = html;
+      document.getElementById("bon-print").innerHTML = html;
     }
 
     // STAP 0: het gegevensformulier openen
@@ -736,6 +847,9 @@
           // Onthoud kort het betaal-id, zodat de Bedankt-pagina bij terugkeer
           // aan Mollie kan vragen of er écht betaald is (dan pas mandje leegmaken).
           try { localStorage.setItem("melissa_betaling", data.betaalId || ""); } catch(e){}
+          // De bestelbon nu bewaren: na de omweg langs Mollie is het mandje
+          // mogelijk al leeg en weten we niet meer wat er besteld was.
+          bewaarBestelling("online");
           window.location.href = data.checkoutUrl;   // door naar de betaalpagina van Mollie
           return;
         }
@@ -823,12 +937,15 @@
     document.getElementById("betaal-sluit").addEventListener("click", sluitBetaling);
     document.getElementById("betaal-overlay").addEventListener("click", sluitBetaling);
     document.getElementById("betaald-knop").addEventListener("click", () => {
-      // "Ik heb betaald" -> bedankscherm + mandje leegmaken
+      // "Ik heb betaald" -> bestelbon opmaken, bedankscherm, mandje leegmaken
       document.getElementById("b-med2").textContent = huidigeMededeling;
+      toonBon(bewaarBestelling("overschrijving"));   // moet vóór het legen van het mandje
       toonStap("bedankt");
       Object.keys(mandje).forEach(id => delete mandje[id]);
       tekenMandje();
     });
+
+    document.getElementById("print-knop").addEventListener("click", () => window.print());
     document.getElementById("klaar-knop").addEventListener("click", () => {
       document.getElementById("bestelform").reset();  // formulier leegmaken voor een volgende bestelling
       sluitBetaling();
@@ -840,6 +957,8 @@
     toonProducten();
     laadMandje();
     tekenMandje();
-  </script>
+  </script>  <!-- Alleen zichtbaar bij afdrukken: de bestelbon op papier -->
+  <div id="bon-print"></div>
+
 </body>
 </html>

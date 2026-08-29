@@ -667,11 +667,14 @@
       return s;
     }
 
-    // Korte samenvatting van het mandje als tekst (voor in de bestelling-mail)
+    // Korte samenvatting van het mandje als tekst (voor in de bestelling-mail).
+    // "plaats" is de plek in het magazijn; die komt uit products.js en staat
+    // alleen in deze mail, nooit op de site. Ontbreekt ze, dan valt [plaats ?]
+    // op zodat je meteen ziet welk product nog geen plek heeft gekregen.
     function bestellingSamenvatting(){
       const regels = Object.keys(mandje).map(id => {
         const p = vind(id), n = mandje[id];
-        return `${n}x ${p.naam.replace("Melissa ","")} (à ${euro(p.prijs_incl_btw)})`;
+        return `${n}x ${p.naam.replace("Melissa ","")} [plaats ${p.plaats || "?"}] (à ${euro(p.prijs_incl_btw)})`;
       });
       const subtotaal = subtotaalMandje();
       const verzend = verzendkostVoor(subtotaal);

@@ -289,6 +289,14 @@
           data-netlify="true" netlify-honeypot="bot-field" style="text-align:left">
       <input type="hidden" name="form-name" value="bestelling">
       <p style="display:none"><label>Laat dit leeg: <input name="bot-field"></label></p>
+      <!-- Verborgen velden. Ze staan hier bovenaan omdat Netlify de velden in
+           deze volgorde in de notificatiemail zet: eerst wat je moet doen
+           (nummer, betaalwijze, bedrag, pakbon), dan naar wie het gaat. -->
+      <input type="hidden" name="bestelnummer" id="f-bestelnummer">
+      <input type="hidden" name="betaalwijze"  id="f-betaalwijze">
+      <input type="hidden" name="totaal"       id="f-totaal">
+      <input type="hidden" name="pakbon"       id="f-bestelling">
+
       <h2 style="text-align:center">Jouw gegevens</h2>
       <p class="betaal-uitleg" style="text-align:center">Vul je gegevens in zodat we je bestelling kunnen leveren.</p>
       <div class="veld"><label>Naam *</label><input name="naam" required></div>
@@ -300,9 +308,6 @@
       </div>
       <div class="veld"><label>Telefoon (optioneel)</label><input name="telefoon"></div>
       <div class="veld"><label>Opmerking (optioneel)</label><textarea name="opmerking" rows="2"></textarea></div>
-      <input type="hidden" name="bestelnummer" id="f-bestelnummer">
-      <input type="hidden" name="bestelling" id="f-bestelling">
-      <input type="hidden" name="totaal" id="f-totaal">
       <label class="akkoord"><input type="checkbox" name="akkoord" value="ja" required>
         <span>Ik ga akkoord met de <a href="voorwaarden.html" target="_blank">voorwaarden</a>
         en het <a href="retour.html" target="_blank">retourbeleid</a>.</span></label>
@@ -850,6 +855,7 @@
           // De bestelbon nu bewaren: na de omweg langs Mollie is het mandje
           // mogelijk al leeg en weten we niet meer wat er besteld was.
           bewaarBestelling("online");
+          await verstuurBestelling("online");   // afwachten: hierna verlaten we de pagina
           window.location.href = data.checkoutUrl;   // door naar de betaalpagina van Mollie
           return;
         }
@@ -899,21 +905,30 @@
       document.getElementById("betaal-overlay").classList.remove("open");
     }
 
-    // Formulier verzenden: gegevens naar Netlify sturen, dan door naar de QR
-    document.getElementById("bestelform").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const form = e.target;
+    // De bestelling naar Netlify sturen. Gebeurt pas ná de betaalkeuze, zodat
+    // "betaalwijze" ingevuld in de mail staat — anders weet je bij het inpakken
+    // niet of het geld nog moet komen of al binnen is.
+    async function verstuurBestelling(betaalwijze){
+      document.getElementById("f-betaalwijze").value =
+        betaalwijze === "online"
+          ? "Online betaald (Bancontact/kaart) — niets meer te ontvangen"
+          : `Overschrijving — ${euro(huidigTotaal)} nog te ontvangen, mededeling ${huidigeMededeling}`;
       try {
         // Netlify vangt dit op; jij ziet elke bestelling in je Netlify-dashboard
         await fetch("/", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams(new FormData(form)).toString()
+          body: new URLSearchParams(new FormData(document.getElementById("bestelform"))).toString()
         });
       } catch (err) {
         // Lukt het versturen niet (bv. bij lokaal testen)? Dan gaan we toch door naar de betaling.
         console.log("Bestelling versturen mislukte (lokaal testen?):", err);
       }
+    }
+
+    // Formulier ingevuld: gegevens onthouden en door naar de betaalkeuze
+    document.getElementById("bestelform").addEventListener("submit", (e) => {
+      e.preventDefault();
       // gegevens onthouden of net wissen, volgens het vinkje
       if (document.getElementById("onthoud").checked) bewaarKlant(); else wisKlant();
       document.getElementById("keuze-fout").style.display = "none";
@@ -931,7 +946,10 @@
 
     // De twee betaalkeuzes
     document.getElementById("kies-online").addEventListener("click", (e) => startMollie(e.currentTarget));
-    document.getElementById("kies-overschrijving").addEventListener("click", () => gaNaarBetaling());
+    document.getElementById("kies-overschrijving").addEventListener("click", () => {
+      verstuurBestelling("overschrijving");   // mag op de achtergrond doorlopen
+      gaNaarBetaling();
+    });
 
     document.getElementById("afreken").addEventListener("click", () => { zetMandje(false); openBetaling(); });
     document.getElementById("betaal-sluit").addEventListener("click", sluitBetaling);

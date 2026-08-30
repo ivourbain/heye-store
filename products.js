@@ -1,6 +1,6 @@
-// De 85 Melissa-producten.
-// Gemaakt uit een Excel-lijst met maak-products.html.
-// Niet met de hand bewerken: pas de Excel-lijst aan en zet ze opnieuw om.
+// De 85 Melissa-producten (82 zichtbaar, 3 verborgen).
+// Gemaakt uit Melissa_producten_sjabloon.xlsx door maak-products.py.
+// Niet met de hand bewerken: pas het sjabloon aan en draai het script opnieuw.
 const MELISSA_PRODUCTEN = [
   {"id":"ME26936","ean":"8034139269368","bestelcode":128349,"naam":"Melissa Haarkam 21 cm zwart","prijs_incl_btw":2.9,"foto":"fotos/ME26936.jpg","plaats":"1","categorie":"Haarkammen"},
   {"id":"ME26937","ean":"8034139269375","bestelcode":128350,"naam":"Melissa Haarkam 18,6 cm zwart","prijs_incl_btw":2.9,"foto":"fotos/ME26937.jpg","plaats":"2","categorie":"Haarkammen"},
@@ -17,7 +17,7 @@ const MELISSA_PRODUCTEN = [
   {"id":"ME35821","ean":"8034139358215","bestelcode":133394,"naam":"Melissa Haarklem 2 cm 2 stuks","prijs_incl_btw":5.9,"foto":"fotos/ME35821.jpg","plaats":"13","categorie":"Haarclips"},
   {"id":"ME37355","ean":"8034139373553","bestelcode":134899,"naam":"Melissa RVS nagelschaar klassiek gebogen 9 cm","prijs_incl_btw":5.9,"foto":"fotos/ME37355.jpg","plaats":"14","categorie":"Nagelverzorging"},
   {"id":"ME42043","ean":"8034139420431","bestelcode":141742,"naam":"Melissa Haarklemmen 8 cm 4 stuks zwart","prijs_incl_btw":3.5,"foto":"fotos/ME42043.jpg","plaats":"15","categorie":"Haarclips"},
-  {"id":"ME44062","ean":"8034139440620","bestelcode":143651,"naam":"Melissa Haarband 9 x 20 cm zwart","prijs_incl_btw":4.9,"foto":"fotos/ME44062.jpg","plaats":"16","categorie":"Haarbanden"},
+  {"id":"ME44062","ean":"8034139440620","bestelcode":143651,"naam":"Melissa Haarband 9 x 20 cm zwart","prijs_incl_btw":4.9,"foto":"fotos/ME44062.jpg","plaats":"16","categorie":"Haarbanden","zichtbaar":false},
   {"id":"ME44674","ean":"8034139446745","bestelcode":144362,"naam":"Melissa RVS nageltang 10 cm","prijs_incl_btw":9.9,"foto":"fotos/ME44674.jpg","plaats":"17","categorie":"Nagelverzorging"},
   {"id":"ME801594","ean":"8051597015948","bestelcode":228839,"naam":"Melissa Haarklemmen 5 cm 6 stuks","prijs_incl_btw":4.9,"foto":"fotos/ME801594.jpg","plaats":"18","categorie":"Haarclips"},
   {"id":"ME901754","ean":"8055769017549","bestelcode":203895,"naam":"Melissa Schuine blushkwast nr. 114","prijs_incl_btw":6.5,"foto":"fotos/ME901754.jpg","plaats":"19","categorie":"Make-up"},
@@ -53,10 +53,10 @@ const MELISSA_PRODUCTEN = [
   {"id":"ME926809","ean":"8055769268095","bestelcode":225694,"naam":"Melissa Haarklemmen 9 cm 2 stuks","prijs_incl_btw":12,"foto":"fotos/ME926809.jpg","plaats":"49","categorie":"Haarclips"},
   {"id":"ME872383","ean":"8057622723833","bestelcode":239644,"naam":"Melissa Haarborstel met spiegel en houten handvat 24 x 8 cm","prijs_incl_btw":8.75,"foto":"fotos/ME872383.jpg","plaats":"54","categorie":"Haarborstels"},
   {"id":"ME872341","ean":"8057622723413","bestelcode":239342,"naam":"Melissa Kleine pastelkleurige haarborstel 17 x 5,5 cm","prijs_incl_btw":6,"foto":"fotos/ME872341.jpg","plaats":"55","categorie":"Haarborstels"},
-  {"id":"ME863492","ean":"8055304634927","naam":"Melissa Haarklem vleugelmodel","prijs_incl_btw":5,"foto":"fotos/ME863492.jpg","plaats":"56","categorie":"Haarclips"},
+  {"id":"ME863492","ean":"8055304634927","naam":"Melissa Haarklem vleugelmodel","prijs_incl_btw":5,"foto":"fotos/ME863492.jpg","plaats":"56","categorie":"Haarclips","zichtbaar":false},
   {"id":"ME821350","ean":"8056999213503","bestelcode":226428,"naam":"Melissa Spiraalhaarborstel 17,5 x 6,7 cm","prijs_incl_btw":8.75,"foto":"fotos/ME821350.jpg","plaats":"57","categorie":"Haarborstels"},
   {"id":"ME28624","ean":"8034139286242","bestelcode":123253,"naam":"Melissa Grote ronde haarborstel 23 cm","prijs_incl_btw":8.75,"foto":"fotos/ME28624.jpg","plaats":"58","categorie":"Haarborstels"},
-  {"id":"ME45154","ean":"8034139451541","naam":"Melissa Wenkbrauwpincet 9,6 cm","prijs_incl_btw":3.7,"foto":"fotos/ME45154.jpg","plaats":"59","categorie":"Pincetten"},
+  {"id":"ME45154","ean":"8034139451541","naam":"Melissa Wenkbrauwpincet 9,6 cm","prijs_incl_btw":3.7,"foto":"fotos/ME45154.jpg","plaats":"59","categorie":"Pincetten","zichtbaar":false},
   {"id":"ME894328","ean":"8054757643289","bestelcode":238106,"naam":"Melissa Fantasie haarklem eclipsemodel","prijs_incl_btw":4,"foto":"fotos/ME894328.jpg","plaats":"74","categorie":"Haarclips"},
   {"id":"ME44678","ean":"8034139446783","bestelcode":144373,"naam":"Melissa Verchroomde nagelknipper 5,9 cm","prijs_incl_btw":2.5,"foto":"fotos/ME44678.jpg","plaats":"75","categorie":"Nagelverzorging"},
   {"id":"ME45157","ean":"8034139451572","bestelcode":144415,"naam":"Melissa RVS nageltang 9,2 cm assorti","prijs_incl_btw":7.5,"foto":"fotos/ME45157.jpg","plaats":"76","categorie":"Nagelverzorging"},

@@ -506,7 +506,12 @@
       try {
         const opgeslagen = JSON.parse(localStorage.getItem(MANDJE_SLEUTEL) || "{}");
         Object.keys(opgeslagen).forEach(id => {
-          if (vind(id) && opgeslagen[id] > 0) mandje[id] = opgeslagen[id];  // enkel nog bestaande producten
+          // Enkel producten die nog bestaan én nog zichtbaar zijn. Zet je iets
+          // op onzichtbaar (uitverkocht), dan verdwijnt het ook uit een mandje
+          // dat een klant weken geleden liet staan — anders zou hij iets
+          // bestellen dat je niet meer kunt leveren.
+          const p = vind(id);
+          if (p && isZichtbaar(p) && opgeslagen[id] > 0) mandje[id] = opgeslagen[id];
         });
       } catch(e){}
     }
@@ -557,9 +562,17 @@
 
     // De producten van de gekozen afdeling. Dit is de basis voor zowel
     // de categorieknopjes als het productrooster — daarom staan ze altijd samen goed.
+    // Staat er "zichtbaar": false bij een product, dan hoort het niet in de winkel.
+    // Staat er niets, dan is het gewoon zichtbaar — zo blijft een oude products.js
+    // zonder dit veld precies werken zoals vroeger.
+    function isZichtbaar(p){ return p.zichtbaar !== false; }
+
+    // De producten van de gekozen afdeling. Dit is de basis voor zowel
+    // de categorieknopjes als het productrooster — daarom staan ze altijd samen goed.
     function productenInAfdeling(){
       return MELISSA_PRODUCTEN.filter(p =>
-        p.naam && (actieveAfdeling === "alles" || afdelingVan(p) === actieveAfdeling)
+        p.naam && isZichtbaar(p) &&
+        (actieveAfdeling === "alles" || afdelingVan(p) === actieveAfdeling)
       );
     }
 
@@ -567,7 +580,7 @@
     // Dan blijft de balk verborgen — kiezen uit één ding heeft geen zin.
     function maakAfdelingen(){
       const vak = document.getElementById("afdelingen");
-      const aanwezig = new Set(MELISSA_PRODUCTEN.filter(p => p.naam).map(afdelingVan));
+      const aanwezig = new Set(MELISSA_PRODUCTEN.filter(p => p.naam && isZichtbaar(p)).map(afdelingVan));
       const sleutels = AFDELING_VOLGORDE.filter(s => aanwezig.has(s));
 
       if (sleutels.length < 2){

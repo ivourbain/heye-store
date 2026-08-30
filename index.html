@@ -971,6 +971,14 @@
 
     // De klant naar Mollie sturen (online betalen). De geheime sleutel staat
     // veilig in een Netlify Function — nooit op de website zelf.
+    //
+    // We sturen bewust NIET het bedrag mee als "dit moet je afrekenen", maar
+    // enkel het mandje: welke producten, hoeveel stuks. De server zoekt de
+    // prijzen zelf op in products.js en rekent het totaal uit. Zou iemand hier
+    // in de browser knoeien met de prijzen, dan verandert er aan de betaling
+    // niets — de server luistert enkel naar zijn eigen productlijst.
+    // Het schermtotaal gaat wél mee als 'controlebedrag': wijkt dat af van wat
+    // de server berekent, dan gaat de betaling niet door.
     async function startMollie(knop){
       const fout = document.getElementById("keuze-fout");
       fout.style.display = "none";
@@ -982,7 +990,8 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            bedrag: huidigTotaal,
+            mandje: mandje,                 // { "ME26936": 2, ... }
+            controlebedrag: huidigTotaal,   // enkel ter controle
             bestelnummer: huidigeMededeling,
             email: (document.querySelector("input[name=email]") || {}).value || ""
           })
@@ -1003,7 +1012,11 @@
       } catch (e) {
         knop.disabled = false;
         knop.textContent = origineel;
-        fout.textContent = "Online betalen lukt nu even niet. Kies gerust 'Betalen via overschrijving', of probeer straks opnieuw.";
+        // Vriendelijke zin voor de klant, plus de echte reden er klein onder.
+        // Die reden helpt jou bij het testen; de klant kan er geen kwaad mee.
+        const reden = (e && e.message && e.message !== "onbekend") ? e.message : "";
+        fout.innerHTML = "Online betalen lukt nu even niet. Kies gerust 'Betalen via overschrijving', of probeer straks opnieuw."
+          + (reden ? `<br><small style="opacity:.7">(${reden})</small>` : "");
         fout.style.display = "block";
       }
     }
@@ -1048,10 +1061,16 @@
     // De bestelling naar Netlify sturen. Gebeurt pas ná de betaalkeuze, zodat
     // "betaalwijze" ingevuld in de mail staat — anders weet je bij het inpakken
     // niet of het geld nog moet komen of al binnen is.
+    //
+    // LET OP bij "online": deze mail vertrekt vóórdat de klant bij Mollie is
+    // geweest. Op dat moment is er dus nog NIETS betaald. Haakt de klant af op
+    // de betaalpagina, dan heb je toch deze mail. Daarom staat de waarschuwing
+    // in de tekst zelf: de mail mag nooit doen alsof het geld binnen is.
     async function verstuurBestelling(betaalwijze){
       document.getElementById("f-betaalwijze").value =
         betaalwijze === "online"
-          ? "Online betaald (Bancontact/kaart) — niets meer te ontvangen"
+          ? `Online gekozen (Mollie) — ${euro(huidigTotaal)} — ⚠️ NOG NIET BEVESTIGD. `
+            + `Controleer eerst het Mollie-dashboard (bestelnummer ${huidigeMededeling}) vóór je verzendt.`
           : `Overschrijving — ${euro(huidigTotaal)} nog te ontvangen, mededeling ${huidigeMededeling}`;
       try {
         // Netlify vangt dit op; jij ziet elke bestelling in je Netlify-dashboard

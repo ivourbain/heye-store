@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bedankt voor je bestelling — Melissa</title>
+  <title>Bedankt voor je bestelling — Heye Store</title>
   <style>
     :root{--rose:#c76b83;--rose-donker:#a24d64;--inkt:#2c2427;--grijs:#6d6469;
       --lijn:#ece4e6;--achtergrond:#fbf7f7;--wit:#fff}
@@ -67,7 +67,7 @@
   </style>
 </head>
 <body>
-  <header><div class="balk"><a class="logo" href="index.html">MELISSA</a></div></header>
+  <header><div class="balk"><a class="logo" href="index.html">HEYE STORE</a></div></header>
   <main>
 
     <!-- 1) Even geduld terwijl we bij Mollie de betaling controleren -->
@@ -112,7 +112,7 @@
     // De bestelbon die index.html vlak vóór de doorverwijzing naar Mollie bewaarde.
     // Die blijft staan als het mandje leeggemaakt wordt — dat is een andere sleutel.
     function leesBon(){
-      try { return JSON.parse(localStorage.getItem("melissa_bestelbon") || "null"); }
+      try { return JSON.parse(localStorage.getItem("heye_bestelbon") || "null"); }
       catch(e){ return null; }
     }
 
@@ -171,14 +171,14 @@
 
     // Bij een geslaagde betaling: mandje + onthouden betaal-id wissen
     function maakMandjeLeeg(){
-      try { localStorage.removeItem("melissa_mandje"); } catch(e){}
-      try { localStorage.removeItem("melissa_betaling"); } catch(e){}
+      try { localStorage.removeItem("heye_mandje"); } catch(e){}
+      try { localStorage.removeItem("heye_betaling"); } catch(e){}
     }
 
     async function controleer(){
       // Het betaal-id dat de winkel vlak vóór het doorsturen bewaarde
       let betaalId = "";
-      try { betaalId = localStorage.getItem("melissa_betaling") || ""; } catch(e){}
+      try { betaalId = localStorage.getItem("heye_betaling") || ""; } catch(e){}
 
       // Geen id gevonden? Dan kunnen we niets controleren. We tonen de bevestiging
       // maar laten het mandje voor de zekerheid ongemoeid.

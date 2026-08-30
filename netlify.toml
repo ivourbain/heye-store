@@ -8,3 +8,7 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  # products.js meegeven aan de servercode. Zonder deze regel kan
+  # create-payment.js de prijzen niet zelf opzoeken en weigert elke
+  # online betaling met "Productlijst niet leesbaar op de server".
+  included_files = ["products.js"]

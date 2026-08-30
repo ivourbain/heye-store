@@ -1,7 +1,8 @@
-// De 85 Melissa-producten (82 zichtbaar, 3 verborgen).
-// Gemaakt uit Melissa_producten_sjabloon.xlsx door maak-products.py.
-// Niet met de hand bewerken: pas het sjabloon aan en draai het script opnieuw.
-const MELISSA_PRODUCTEN = [
+// De producten van de Heye Store. 85 in de lijst, 82 zichtbaar.
+// Elk product heeft een veld 'afdeling': melissa, montana of diverse.
+// Staat er niets, dan telt het als melissa.
+// Niet met de hand bewerken: gebruik beheer.html.
+const PRODUCTEN = [
   {"id":"ME26936","ean":"8034139269368","bestelcode":128349,"naam":"Melissa Haarkam 21 cm zwart","prijs_incl_btw":2.9,"foto":"fotos/ME26936.jpg","plaats":"1","categorie":"Haarkammen"},
   {"id":"ME26937","ean":"8034139269375","bestelcode":128350,"naam":"Melissa Haarkam 18,6 cm zwart","prijs_incl_btw":2.9,"foto":"fotos/ME26937.jpg","plaats":"2","categorie":"Haarkammen"},
   {"id":"ME26940","ean":"8034139269405","bestelcode":128353,"naam":"Melissa Haarkam 16 cm zwart","prijs_incl_btw":2.9,"foto":"fotos/ME26940.jpg","plaats":"3","categorie":"Haarkammen"},

@@ -30,7 +30,7 @@ const MAX_SOORTEN     = 100;   // hoeveel verschillende producten in één mandj
 const MAX_PER_PRODUCT = 50;    // hoeveel stuks van hetzelfde product
 
 // ---- products.js inlezen -------------------------------------------
-// products.js is geschreven voor de browser ("const MELISSA_PRODUCTEN = [...]").
+// products.js is geschreven voor de browser ("const PRODUCTEN = [...]").
 // Op de server knippen we gewoon het stuk tussen de eerste [ en de laatste ]
 // eruit: dat is nette JSON. Zo blijft products.js het ENIGE bestand met
 // prijzen in — geen tweede lijst die kan gaan afwijken.
@@ -174,7 +174,7 @@ exports.handler = async (event) => {
   // De betaling die we bij Mollie aanmaken
   const betaling = {
     amount: { currency: "EUR", value: bedrag.toFixed(2) },   // bv. "12.90"
-    description: `Melissa bestelling ${bestelnummer}`,
+    description: `Heye Store bestelling ${bestelnummer}`,
     redirectUrl: `${siteUrl}/betaald.html?bestelnummer=${encodeURIComponent(bestelnummer)}`,
     metadata: {
       bestelnummer: bestelnummer,

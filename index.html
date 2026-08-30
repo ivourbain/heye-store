@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   ================================================================
-  MELISSA WEBSHOP — etalage (Fase 3)
+  HEYE STORE — de webshop
   ----------------------------------------------------------------
   Deze pagina bestaat uit 3 delen:
     1) <style>  = het uiterlijk (kleuren, vormen)   -> "de opmaak"
@@ -14,10 +14,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Melissa — Haar- & verzorgingsaccessoires</title>
+  <title>Heye Store — haar- & verzorgingsaccessoires</title>
   <!-- Deze zin toont Google onder de link naar je winkel. -->
-  <meta name="description" content="Melissa haar- en verzorgingsaccessoires: haarclips, kammen, borstels, kwasten en meer. Levering in België, gratis verzending vanaf €40.">
-  <!-- Kleurt de balk bovenaan de browser op een gsm in het roze van Melissa. -->
+  <meta name="description" content="Heye Store: haar- en verzorgingsaccessoires van Melissa — haarclips, kammen, borstels, kwasten en meer. Levering in België, gratis verzending vanaf €40.">
+  <!-- Kleurt de balk bovenaan de browser op een gsm in de huiskleur. -->
   <meta name="theme-color" content="#c76b83">
 
   <style>
@@ -25,7 +25,7 @@
        Kleuren staan bovenaan als "variabelen": pas hier één keer aan
        en het verandert overal op de pagina. */
     :root{
-      --rose:#c76b83;          /* hoofdkleur van Melissa */
+      --rose:#c76b83;          /* huiskleur van de winkel */
       --rose-donker:#a24d64;
       --inkt:#2c2427;          /* tekstkleur */
       --grijs:#7a7075;
@@ -312,7 +312,7 @@
   <!-- ---- 2) DE STRUCTUUR ---------------------------------------------- -->
   <header>
     <div class="balk">
-      <div class="logo">MELISSA<span>haar- &amp; verzorgingsaccessoires</span></div>
+      <div class="logo" id="logo">HEYE STORE<span id="logo-onder">haar- &amp; verzorgingsaccessoires</span></div>
       <div class="zoek">
         <input id="zoekveld" type="search" placeholder="Zoek een product… (bv. haarclip, kwast, kam)">
       </div>
@@ -325,8 +325,8 @@
   <!-- Welkomstbanner -->
   <section class="hero">
     <div class="hero-inner">
-      <h1>Mooie haar- &amp; verzorgingsaccessoires</h1>
-      <p>Ontdek de collectie van Melissa — haarclips, kammen, borstels, kwasten en meer.
+      <h1 id="hero-titel">Mooie haar- &amp; verzorgingsaccessoires</h1>
+      <p id="hero-tekst">Ontdek de collectie van Melissa — haarclips, kammen, borstels, kwasten en meer.
          Zorgvuldig gekozen, eerlijk geprijsd en rechtstreeks bij jou thuis geleverd.</p>
     </div>
   </section>
@@ -353,7 +353,7 @@
       <a href="privacy.html">Privacybeleid</a>
       <a href="retour.html">Retour &amp; herroeping</a>
     </div>
-    <div>© Melissa — CR.Service - Heye Store · Winkelstraat 69/1, 2890 Sint-Amands</div>
+    <div>© Heye Store — CR.Service · Winkelstraat 69/1, 2890 Sint-Amands</div>
   </div></footer>
 
   <!-- Het winkelmandje -->
@@ -415,7 +415,7 @@
     <!-- Stap "keuze": hoe wil de klant betalen? -->
     <div id="betaal-keuze" style="display:none">
       <h2>Hoe wil je betalen?</h2>
-      <p class="betaal-uitleg">Kies je betaalmethode — beide komen rechtstreeks bij Melissa terecht.</p>
+      <p class="betaal-uitleg">Kies je betaalmethode — beide komen rechtstreeks bij Heye Store terecht.</p>
       <button type="button" class="afreken" id="kies-online">💳 Online betalen (Bancontact / kaart)</button>
       <button type="button" class="afreken-tweede" id="kies-overschrijving">Betalen via overschrijving (QR-code)</button>
       <p id="keuze-fout" class="keuze-fout" style="display:none"></p>
@@ -439,13 +439,13 @@
         <div class="bg-rij"><span>Mededeling</span>
           <span class="bg-waarde"><strong id="b-med"></strong><button type="button" class="kopieer" data-doel="b-med">Kopieer</button></span></div>
       </div>
-      <p class="betaal-tip">Vermeld zeker de <strong>mededeling</strong> — zo herkent Melissa jouw bestelling.</p>
+      <p class="betaal-tip">Vermeld zeker de <strong>mededeling</strong> — zo herkennen we jouw bestelling.</p>
       <button class="afreken" id="betaald-knop">Ik heb betaald</button>
     </div>
     <div id="betaal-stap2" style="display:none">
       <div class="bedankt">✓</div>
       <h2>Bedankt voor je bestelling!</h2>
-      <p class="betaal-uitleg">Zodra Melissa je betaling ziet binnenkomen, wordt je bestelling
+      <p class="betaal-uitleg">Zodra we je betaling zien binnenkomen, wordt je bestelling
          klaargemaakt en verzonden. Je mededeling was <strong id="b-med2"></strong>.</p>
       <div class="bon" id="bon"></div>
       <button type="button" class="afreken-tweede" id="print-knop">🖨 Afdrukken of bewaren als pdf</button>
@@ -467,6 +467,9 @@
        ============================================================ */
     const WINKEL = {
       naam: "CR.Service - Heye Store",     // naam zoals op je bankrekening
+      toonnaam: "Heye Store",              // hoe de winkel heet voor de klant
+      slogan: "haar- & verzorgingsaccessoires",  // regeltje onder het logo
+      code: "HS",                          // begin van elk bestelnummer: HS-260830-0473
       iban: "BE84731068044259",            // jouw eigen IBAN
       bic:  ""                             // mag leeg blijven
     };
@@ -482,6 +485,16 @@
       return VERZENDING.kosten;
     }
 
+    /* ---- De productlijst ------------------------------------------------
+       products.js heet sinds de Heye Store-versie PRODUCTEN. Had je nog een
+       oude products.js met MELISSA_PRODUCTEN, dan werkt die ook gewoon: we
+       nemen hieronder de eerste die we vinden. Zo staat je winkel nooit leeg
+       door één hernoemde regel. */
+    const ALLE_PRODUCTEN =
+        (typeof PRODUCTEN        !== "undefined") ? PRODUCTEN
+      : (typeof MELISSA_PRODUCTEN !== "undefined") ? MELISSA_PRODUCTEN
+      : [];
+
     /* ---- 3) DE WERKING ------------------------------------------------
        Het mandje is een lijst in het geheugen: per product-id houden
        we bij hoeveel stuks erin zitten, bv. { "ME26936": 2 }. */
@@ -495,8 +508,8 @@
     /* ---- Onthouden in de browser (localStorage) --------------------------
        Dit bewaart gegevens ENKEL in de browser van de klant, op zijn eigen
        toestel. Er wordt niets naar ons of naar derden gestuurd. */
-    const MANDJE_SLEUTEL = "melissa_mandje";
-    const KLANT_SLEUTEL  = "melissa_klant";
+    const MANDJE_SLEUTEL = "heye_mandje";
+    const KLANT_SLEUTEL  = "heye_klant";
 
     // Winkelmandje bewaren / terugladen (automatisch)
     function bewaarMandje(){
@@ -537,12 +550,40 @@
       }
     }
 
-    // De afdelingen van de winkel. Links de interne sleutel (die staat in products.js),
-    // rechts wat de klant leest. Wil je later een andere naam tonen? Pas hier één woord aan.
+    // De afdelingen van de winkel. De sleutel links (melissa, montana, diverse)
+    // staat in products.js bij elk product. Alles wat de klant leest, staat hier.
+    //
+    //   naam  = op de afdelingsknop
+    //   merk  = het woord dat vooraan in de productnaam staat en dat we in de
+    //           winkel weglaten ("Melissa Haarkam 21 cm" wordt "Haarkam 21 cm")
+    //   titel + tekst = de welkomstbanner wanneer deze afdeling gekozen is
     const AFDELINGEN = {
-      melissa: "Melissa Haarmode",
-      montana: "Montana Brillen",
-      diverse: "Diverse"
+      melissa: {
+        naam: "Melissa Haarmode",
+        merk: "Melissa",
+        titel: "Mooie haar- &amp; verzorgingsaccessoires",
+        tekst: "Ontdek de collectie van Melissa — haarclips, kammen, borstels, kwasten en meer. "
+             + "Zorgvuldig gekozen, eerlijk geprijsd en rechtstreeks bij jou thuis geleverd."
+      },
+      montana: {
+        naam: "Montana Brillen",
+        merk: "Montana",
+        titel: "Brillen van Montana",
+        tekst: "Lees- en zonnebrillen van Montana. Duidelijke sterktes, eerlijke prijzen, "
+             + "rechtstreeks bij jou thuis geleverd."
+      },
+      diverse: {
+        naam: "Diverse",
+        merk: "",
+        titel: "Nog meer moois",
+        tekst: "Een selectie die niet in de andere afdelingen past, maar wel de moeite waard is."
+      }
+    };
+
+    // De welkomsttekst wanneer de klant "Alles" bekijkt of er nog maar één afdeling is.
+    const WELKOM_ALGEMEEN = {
+      titel: "Welkom bij Heye Store",
+      tekst: "Zorgvuldig gekozen accessoires, eerlijk geprijsd en rechtstreeks bij jou thuis geleverd."
     };
     const AFDELING_VOLGORDE = ["melissa", "montana", "diverse"];
 
@@ -560,6 +601,32 @@
     // Zo blijft de huidige productlijst gewoon werken zolang het veld er nog niet in staat.
     function afdelingVan(p){ return p.afdeling || "melissa"; }
 
+    // Alle merknamen die vooraan in een productnaam kunnen staan, uit AFDELINGEN gehaald.
+    // Voeg je later een afdeling toe met een eigen merk, dan werkt dit vanzelf mee.
+    const MERKEN = Object.keys(AFDELINGEN)
+      .map(s => AFDELINGEN[s].merk)
+      .filter(Boolean);
+
+    // De naam zoals de klant hem leest: zonder het merk vooraan. "Melissa Haarkam 21 cm"
+    // wordt "Haarkam 21 cm", "Montana Leesbril +1,50" wordt "Leesbril +1,50".
+    // In welke afdeling je zit, zie je al aan de knop erboven — het merk twee keer
+    // herhalen maakt de lijst enkel rommeliger.
+    function toonNaam(p){
+      let n = p.naam || "";
+      MERKEN.forEach(m => { if (n.indexOf(m + " ") === 0) n = n.slice(m.length + 1); });
+      return n;
+    }
+
+    // Zet de welkomstbanner en het regeltje onder het logo, passend bij de afdeling
+    // die de klant bekijkt.
+    function zetHero(){
+      const a = (actieveAfdeling !== "alles" && AFDELINGEN[actieveAfdeling])
+        ? AFDELINGEN[actieveAfdeling] : WELKOM_ALGEMEEN;
+      document.getElementById("hero-titel").innerHTML = a.titel;
+      document.getElementById("hero-tekst").innerHTML = a.tekst;
+      document.getElementById("logo-onder").innerHTML = WINKEL.slogan;
+    }
+
     // De producten van de gekozen afdeling. Dit is de basis voor zowel
     // de categorieknopjes als het productrooster — daarom staan ze altijd samen goed.
     // Staat er "zichtbaar": false bij een product, dan hoort het niet in de winkel.
@@ -570,7 +637,7 @@
     // De producten van de gekozen afdeling. Dit is de basis voor zowel
     // de categorieknopjes als het productrooster — daarom staan ze altijd samen goed.
     function productenInAfdeling(){
-      return MELISSA_PRODUCTEN.filter(p =>
+      return ALLE_PRODUCTEN.filter(p =>
         p.naam && isZichtbaar(p) &&
         (actieveAfdeling === "alles" || afdelingVan(p) === actieveAfdeling)
       );
@@ -580,7 +647,7 @@
     // Dan blijft de balk verborgen — kiezen uit één ding heeft geen zin.
     function maakAfdelingen(){
       const vak = document.getElementById("afdelingen");
-      const aanwezig = new Set(MELISSA_PRODUCTEN.filter(p => p.naam && isZichtbaar(p)).map(afdelingVan));
+      const aanwezig = new Set(ALLE_PRODUCTEN.filter(p => p.naam && isZichtbaar(p)).map(afdelingVan));
       const sleutels = AFDELING_VOLGORDE.filter(s => aanwezig.has(s));
 
       if (sleutels.length < 2){
@@ -591,7 +658,7 @@
       vak.style.display = "flex";
       vak.innerHTML = "";
 
-      [["alles", "Alles"], ...sleutels.map(s => [s, AFDELINGEN[s] || s])]
+      [["alles", "Alles"], ...sleutels.map(s => [s, (AFDELINGEN[s] || {}).naam || s])]
         .forEach(([sleutel, naam]) => {
           const knop = document.createElement("button");
           knop.textContent = naam;
@@ -601,6 +668,7 @@
             document.querySelectorAll("#afdelingen button").forEach(b => b.classList.remove("actief"));
             knop.classList.add("actief");
             maakFilters();      // andere afdeling = andere categorieknopjes
+            zetHero();          // en een passende welkomsttekst
             toonProducten();
           });
           vak.appendChild(knop);
@@ -677,7 +745,7 @@
         kaart.innerHTML = `
           <div class="foto"><img src="${p.foto}" alt="${p.naam}" loading="lazy"></div>
           <div class="inhoud">
-            <div class="naam">${p.naam.replace("Melissa ", "")}</div>
+            <div class="naam">${toonNaam(p)}</div>
             <div class="prijs">${euro(p.prijs_incl_btw)}</div>
             <button data-id="${p.id}">In mandje</button>
           </div>`;
@@ -691,7 +759,7 @@
     }
 
     // Zoek een product terug op zijn id
-    function vind(id){ return MELISSA_PRODUCTEN.find(p => p.id === id); }
+    function vind(id){ return ALLE_PRODUCTEN.find(p => p.id === id); }
 
     // Voeg 1 stuk toe aan het mandje
     function voegToe(id){
@@ -724,7 +792,7 @@
           regel.innerHTML = `
             <img src="${p.foto}" alt="">
             <div style="flex:1">
-              <div class="r-naam">${p.naam.replace("Melissa ", "")}</div>
+              <div class="r-naam">${toonNaam(p)}</div>
               <div class="r-prijs">${euro(p.prijs_incl_btw)} per stuk</div>
               <div class="aantal">
                 <button onclick="wijzig('${id}',-1)">−</button>
@@ -787,14 +855,14 @@
        We maken een EPC-QR (SEPA-standaard). De bankapp van de klant
        leest daaruit: begunstigde, IBAN, bedrag en mededeling. */
 
-    // Uniek bestelnummer, bv. MEL-260826-0473
+    // Uniek bestelnummer, bv. HS-260830-0473. De code (HS) staat in WINKEL.
     function maakBestelnummer(){
       const d = new Date();
       const dd = String(d.getDate()).padStart(2,"0");
       const mm = String(d.getMonth()+1).padStart(2,"0");
       const jj = String(d.getFullYear()).slice(2);
       const rnd = String(Math.floor(Math.random()*10000)).padStart(4,"0");
-      return `MEL-${jj}${mm}${dd}-${rnd}`;
+      return `${WINKEL.code}-${jj}${mm}${dd}-${rnd}`;
     }
 
     // Bouw de EPC-tekst volgens de SEPA-QR-standaard (11 regels)
@@ -854,7 +922,7 @@
         return {
           sorteer: plaats === "" ? 999999 : (Number(plaats) || 999999),
           tekst: `${String(plaats || "?").padStart(3, " ")}  ${String(mandje[id]) + "x"}  `
-               + `${p.naam.replace("Melissa ","")}  (${p.id}, à ${euro(p.prijs_incl_btw)})`
+               + `${toonNaam(p)}  (${p.id}, à ${euro(p.prijs_incl_btw)})`
         };
       });
       regels.sort((a, b) => a.sorteer - b.sorteer);
@@ -882,7 +950,7 @@
         betaalwijze: betaalwijze,
         regels: Object.keys(mandje).map(id => {
           const p = vind(id);
-          return { aantal: mandje[id], naam: p.naam.replace("Melissa ",""), stuk: p.prijs_incl_btw };
+          return { aantal: mandje[id], naam: toonNaam(p), stuk: p.prijs_incl_btw };
         }),
         subtotaal: subtotaal,
         verzending: verzend,
@@ -896,7 +964,7 @@
         iban: WINKEL.iban,
         winkel: WINKEL.naam
       };
-      try { localStorage.setItem("melissa_bestelbon", JSON.stringify(bon)); } catch(e){}
+      try { localStorage.setItem("heye_bestelbon", JSON.stringify(bon)); } catch(e){}
       return bon;
     }
 
@@ -1000,7 +1068,7 @@
         if (data.checkoutUrl) {
           // Onthoud kort het betaal-id, zodat de Bedankt-pagina bij terugkeer
           // aan Mollie kan vragen of er écht betaald is (dan pas mandje leegmaken).
-          try { localStorage.setItem("melissa_betaling", data.betaalId || ""); } catch(e){}
+          try { localStorage.setItem("heye_betaling", data.betaalId || ""); } catch(e){}
           // De bestelbon nu bewaren: na de omweg langs Mollie is het mandje
           // mogelijk al leeg en weten we niet meer wat er besteld was.
           bewaarBestelling("online");
@@ -1130,6 +1198,7 @@
 
     // Start: afdelings- en filterknoppen bouwen, bewaard mandje terugladen en alles tonen
     maakAfdelingen();
+    zetHero();
     maakFilters();
     toonProducten();
     laadMandje();

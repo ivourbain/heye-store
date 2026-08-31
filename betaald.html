@@ -3,30 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <title>Bedankt voor je bestelling — Heye Store</title>
   <style>
-    :root{--rose:#c76b83;--rose-donker:#a24d64;--inkt:#2c2427;--grijs:#6d6469;
-      --lijn:#ece4e6;--achtergrond:#fbf7f7;--wit:#fff}
+    :root{--oranje:#ff6600;--oranje-donker:#c24a00;
+      --oranje-licht:#fff4ed;--inkt:#1a1a1a;--grijs:#6d6469;
+      --lijn:#eae5e0;--achtergrond:#faf8f6;--wit:#fff}
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(--inkt);
       background:var(--achtergrond);line-height:1.6;min-height:100vh;display:flex;flex-direction:column}
     header{background:var(--wit);border-bottom:1px solid var(--lijn)}
     .balk{max-width:820px;margin:0 auto;padding:16px 22px}
-    .logo{font-size:23px;font-weight:700;color:var(--rose-donker);text-decoration:none;letter-spacing:.5px}
+    .logo img{display:block;height:40px;width:auto}
     main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 22px}
     .kaart{background:var(--wit);border:1px solid var(--lijn);border-radius:18px;
       padding:40px 34px;max-width:460px;text-align:center;box-shadow:0 8px 30px rgba(120,70,85,.07)}
-    .vink{width:70px;height:70px;border-radius:50%;background:var(--rose);color:#fff;
+    .vink{width:70px;height:70px;border-radius:50%;background:var(--oranje-donker);color:#fff;
       font-size:38px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
-    .vink.wacht{background:#e7dfe2;color:var(--rose-donker)}
+    .vink.wacht{background:#e7dfe2;color:var(--oranje-donker)}
     .vink.open{background:#f3d38b;color:#8a6d1f}
     h1{font-size:24px;margin-bottom:12px}
     p{color:var(--grijs);font-size:15px;margin-bottom:14px}
     .nummer{display:inline-block;background:var(--achtergrond);border:1px solid var(--lijn);
       border-radius:8px;padding:6px 14px;font-weight:700;color:var(--inkt);margin-bottom:20px}
-    .terug{display:inline-block;background:var(--rose);color:#fff;text-decoration:none;
+    .terug{display:inline-block;background:var(--oranje);color:var(--inkt);text-decoration:none;
       padding:12px 24px;border-radius:12px;font-weight:600}
-    .terug:hover{background:var(--rose-donker)}
+    .terug:hover{background:var(--oranje-donker)}
     .verborgen{display:none}
 
     /* ---- Bestelbon (op het scherm én op papier) ---- */
@@ -50,8 +53,8 @@
     .bon-betaal{font-size:14px;margin-top:12px;padding:10px 12px;
       background:var(--achtergrond);border-radius:8px;line-height:1.5}
     .bon-adres{font-size:14px;margin-top:12px;color:var(--grijs);line-height:1.5}
-    .printknop{display:inline-block;background:#fff;color:var(--rose-donker);
-      border:1px solid var(--rose);padding:11px 20px;border-radius:12px;
+    .printknop{display:inline-block;background:#fff;color:var(--oranje-donker);
+      border:1px solid var(--oranje);padding:11px 20px;border-radius:12px;
       font-weight:600;font-size:15px;cursor:pointer;margin:0 8px 12px 0;font-family:inherit}
     .printknop:hover{background:var(--achtergrond)}
     #bon-print{display:none}
@@ -67,7 +70,7 @@
   </style>
 </head>
 <body>
-  <header><div class="balk"><a class="logo" href="index.html">HEYE STORE</a></div></header>
+  <header><div class="balk"><a class="logo" href="index.html"><img src="logo.png" alt="Heye Store" width="218" height="120"></a></div></header>
   <main>
 
     <!-- 1) Even geduld terwijl we bij Mollie de betaling controleren -->

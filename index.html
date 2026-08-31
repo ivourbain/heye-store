@@ -107,6 +107,14 @@
     .kaart .inhoud{padding:12px 14px 16px;display:flex;flex-direction:column;gap:10px;flex:1}
     .kaart .naam{font-size:14px;font-weight:600;min-height:38px}
     .kaart .prijs{font-size:19px;font-weight:700;color:var(--rose-donker)}
+    /* Keuzelijstje voor producten met varianten (bv. de sterkte van een leesbril) */
+    .kaart .variantregel{display:flex;flex-direction:column;gap:4px}
+    .kaart .variantregel span{font-size:12px;color:var(--grijs);font-weight:600}
+    .kaart select.variant{
+      width:100%;padding:8px 10px;border:1px solid var(--rand);border-radius:8px;
+      background:#fff;font-family:inherit;font-size:14px;color:var(--tekst);cursor:pointer;
+    }
+    .kaart select.variant:focus{outline:2px solid var(--rose);outline-offset:1px}
     .kaart button{
       margin-top:auto;border:1px solid var(--rose);background:#fff;color:var(--rose-donker);
       padding:9px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
@@ -314,7 +322,7 @@
     <div class="balk">
       <div class="logo" id="logo">HEYE STORE<span id="logo-onder">haar- &amp; verzorgingsaccessoires</span></div>
       <div class="zoek">
-        <input id="zoekveld" type="search" placeholder="Zoek een product… (bv. haarclip, kwast, kam)">
+        <input id="zoekveld" type="search" placeholder="Zoek een product… (bv. haarclip, leesbril, kam)">
       </div>
       <button class="mandknop" id="open-mandje">
         Mandje <span class="badge" id="badge" style="display:none">0</span>
@@ -468,7 +476,7 @@
     const WINKEL = {
       naam: "CR.Service - Heye Store",     // naam zoals op je bankrekening
       toonnaam: "Heye Store",              // hoe de winkel heet voor de klant
-      slogan: "haar- & verzorgingsaccessoires",  // regeltje onder het logo
+      slogan: "haaraccessoires & brillen",  // regeltje onder het logo
       code: "HS",                          // begin van elk bestelnummer: HS-260830-0473
       iban: "BE84731068044259",            // jouw eigen IBAN
       bic:  ""                             // mag leeg blijven
@@ -563,29 +571,36 @@
         merk: "Melissa",
         titel: "Mooie haar- &amp; verzorgingsaccessoires",
         tekst: "Ontdek de collectie van Melissa — haarclips, kammen, borstels, kwasten en meer. "
-             + "Zorgvuldig gekozen, eerlijk geprijsd en rechtstreeks bij jou thuis geleverd."
+             + "Zorgvuldig gekozen, eerlijk geprijsd en rechtstreeks bij jou thuis geleverd.",
+        variantLabel: "Uitvoering"
       },
       montana: {
         naam: "Montana Brillen",
         merk: "Montana",
         titel: "Brillen van Montana",
-        tekst: "Lees- en zonnebrillen van Montana. Duidelijke sterktes, eerlijke prijzen, "
-             + "rechtstreeks bij jou thuis geleverd."
+        tekst: "Leesbrillen, computerbrillen met blauwlichtfilter en neckreaders. "
+             + "Duidelijke sterktes, eerlijke prijzen, rechtstreeks bij jou thuis geleverd.",
+        // Staat boven het keuzelijstje bij producten met varianten. Zonder dit
+        // zou de klant enkel "+1,00" zien en niet weten waar hij uit kiest.
+        variantLabel: "Sterkte"
       },
       diverse: {
         naam: "Diverse",
         merk: "",
         titel: "Nog meer moois",
-        tekst: "Een selectie die niet in de andere afdelingen past, maar wel de moeite waard is."
+        tekst: "Een selectie die niet in de andere afdelingen past, maar wel de moeite waard is.",
+        variantLabel: "Uitvoering"
       }
     };
+
+    // De volgorde waarin de afdelingen verschijnen: in de knoppenbalk én op de pakbon.
+    const AFDELING_VOLGORDE = ["melissa", "montana", "diverse"];
 
     // De welkomsttekst wanneer de klant "Alles" bekijkt of er nog maar één afdeling is.
     const WELKOM_ALGEMEEN = {
       titel: "Welkom bij Heye Store",
       tekst: "Zorgvuldig gekozen accessoires, eerlijk geprijsd en rechtstreeks bij jou thuis geleverd."
     };
-    const AFDELING_VOLGORDE = ["melissa", "montana", "diverse"];
 
     // Welke afdeling en categorie zijn actief, en wat typte de klant in de zoekbalk
     let actieveAfdeling = "alles";
@@ -615,6 +630,64 @@
       let n = p.naam || "";
       MERKEN.forEach(m => { if (n.indexOf(m + " ") === 0) n = n.slice(m.length + 1); });
       return n;
+    }
+
+    /* ---- Producten met varianten -----------------------------------------
+       Sommige producten bestaan in meerdere uitvoeringen die elk een eigen
+       product zijn, met een eigen streepjescode en een eigen plaats in het rek —
+       leesbrillen bijvoorbeeld, één per sterkte. Zonder hulp zou de klant tien
+       bijna identieke kaartjes naast elkaar zien.
+
+       Daarom heeft zo'n product twee extra velden:
+         groep   = dezelfde code voor alle uitvoeringen (het modelnummer)
+         variant = wat er in het keuzelijstje komt, bv. "+1,50"
+
+       Staat er GEEN groep, dan is het gewoon een los product. Zo blijven alle
+       Melissa-producten werken zonder dat er iets aan hun gegevens verandert. */
+
+    // Hoort dit product bij een groep?
+    function heeftGroep(p){ return !!(p.groep && String(p.groep).trim()); }
+
+    // "+1,50" -> 1.5 , zodat de sterktes op volgorde in het lijstje komen.
+    // Staat er iets anders in dan een getal, dan blijft de oorspronkelijke
+    // volgorde uit products.js behouden.
+    function variantGetal(p){
+      const m = String(p.variant || "").replace(",", ".").match(/-?\d+(\.\d+)?/);
+      return m ? parseFloat(m[0]) : NaN;
+    }
+
+    // De modelnaam zonder de variant erachter: "Classic black +1,50" -> "Classic black".
+    function groepsNaam(p){
+      const n = toonNaam(p), variant = String(p.variant || "").trim();
+      if (variant && n.endsWith(variant)) return n.slice(0, -variant.length).trim();
+      return n;
+    }
+
+    // Zet een platte productlijst om in wat het rooster moet tonen:
+    // losse producten blijven los, producten met dezelfde groep worden één kaart.
+    // De volgorde van products.js blijft behouden: een groep komt op de plaats
+    // van zijn eerste lid.
+    function maakKaarten(lijst){
+      const kaarten = [], perGroep = {};
+      lijst.forEach(p => {
+        if (!heeftGroep(p)) { kaarten.push({ soort: "los", p: p }); return; }
+        const g = String(p.groep).trim();
+        if (!perGroep[g]) {
+          perGroep[g] = { soort: "groep", groep: g, leden: [] };
+          kaarten.push(perGroep[g]);
+        }
+        perGroep[g].leden.push(p);
+      });
+      // sterktes op volgorde zetten
+      kaarten.forEach(k => {
+        if (k.soort !== "groep") return;
+        if (k.leden.every(p => !isNaN(variantGetal(p)))) {
+          k.leden.sort((a, b) => variantGetal(a) - variantGetal(b));
+        }
+        // een groep die na het filteren nog één lid over heeft, is gewoon een los product
+        if (k.leden.length === 1) { k.soort = "los"; k.p = k.leden[0]; }
+      });
+      return kaarten;
     }
 
     // Zet de welkomstbanner en het regeltje onder het logo, passend bij de afdeling
@@ -739,16 +812,47 @@
       );
 
       rooster.innerHTML = "";                       // maak eerst leeg
-      lijst.forEach(p => {
+      const kaarten = maakKaarten(lijst);
+
+      kaarten.forEach(k => {
         const kaart = document.createElement("div");
         kaart.className = "kaart";
-        kaart.innerHTML = `
-          <div class="foto"><img src="${p.foto}" alt="${p.naam}" loading="lazy"></div>
-          <div class="inhoud">
-            <div class="naam">${toonNaam(p)}</div>
-            <div class="prijs">${euro(p.prijs_incl_btw)}</div>
-            <button data-id="${p.id}">In mandje</button>
-          </div>`;
+
+        if (k.soort === "los"){
+          const p = k.p;
+          kaart.innerHTML = `
+            <div class="foto"><img src="${p.foto}" alt="${veiligeTekst(p.naam)}" loading="lazy"></div>
+            <div class="inhoud">
+              <div class="naam">${toonNaam(p)}</div>
+              <div class="prijs">${euro(p.prijs_incl_btw)}</div>
+              <button data-id="${p.id}">In mandje</button>
+            </div>`;
+        } else {
+          // Eén kaart voor het hele model, met een keuzelijstje voor de variant.
+          const eerste = k.leden[0];
+          const prijzen = k.leden.map(p => p.prijs_incl_btw);
+          const zelfdePrijs = Math.min(...prijzen) === Math.max(...prijzen);
+          const prijsTekst = zelfdePrijs
+            ? euro(eerste.prijs_incl_btw)
+            : `vanaf ${euro(Math.min(...prijzen))}`;
+          const keuzes = k.leden
+            .map(p => `<option value="${p.id}">${veiligeTekst(p.variant || p.id)}</option>`)
+            .join("");
+          // Waar kiest de klant uit? Bij brillen "Sterkte", elders "Uitvoering".
+          // Staat per afdeling in AFDELINGEN.
+          const label = (AFDELINGEN[afdelingVan(eerste)] || {}).variantLabel || "Uitvoering";
+          kaart.innerHTML = `
+            <div class="foto"><img src="${eerste.foto}" alt="${veiligeTekst(groepsNaam(eerste))}" loading="lazy"></div>
+            <div class="inhoud">
+              <div class="naam">${groepsNaam(eerste)}</div>
+              <div class="prijs">${prijsTekst}</div>
+              <label class="variantregel">
+                <span>${veiligeTekst(label)}</span>
+                <select class="variant">${keuzes}</select>
+              </label>
+              <button data-groep="${veiligeTekst(k.groep)}">In mandje</button>
+            </div>`;
+        }
         rooster.appendChild(kaart);
       });
 
@@ -756,6 +860,14 @@
       const n = lijst.length;
       document.getElementById("telling").textContent = `${n} product${n === 1 ? "" : "en"}`;
       document.getElementById("geen").style.display = n ? "none" : "block";
+    }
+
+    // Maakt tekst veilig om in HTML te zetten. Zonder dit breekt een productnaam
+    // met een aanhalingsteken erin (bv. een maat als 21") de opmaak van de kaart.
+    function veiligeTekst(t){
+      return String(t == null ? "" : t)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
     // Zoek een product terug op zijn id
@@ -840,7 +952,12 @@
 
     /* ---- Alles aan elkaar koppelen (knoppen laten reageren) ---- */
     document.getElementById("rooster").addEventListener("click", e => {
-      if (e.target.matches("button[data-id]")) voegToe(e.target.dataset.id);
+      const knop = e.target.closest("button[data-id], button[data-groep]");
+      if (!knop) return;
+      // Bij een kaart met keuzelijstje bepaalt dat lijstje welk product je krijgt;
+      // bij een gewone kaart staat het product-id op de knop zelf.
+      const kies = knop.closest(".kaart").querySelector("select.variant");
+      voegToe(kies ? kies.value : knop.dataset.id);
     });
     document.getElementById("zoekveld").addEventListener("input", e => { huidigeZoekterm = e.target.value; toonProducten(); });
     // Harmonicaknop: elke tik klapt de categorielijst open of dicht.
@@ -916,24 +1033,45 @@
     // Eén product per regel, gesorteerd op magazijnplaats, zodat je het rek
     // in één richting kunt aflopen in plaats van heen en weer.
     function bestellingSamenvatting(){
-      const regels = Object.keys(mandje).map(id => {
+      // Elke afdeling heeft zijn eigen rek met zijn eigen nummering: Melissa
+      // loopt van 1 tot 85, Montana ook vanaf 1. Zouden we alles op één hoop
+      // sorteren, dan wisselden de regels tussen de twee rekken heen en weer.
+      // Daarom: eerst per afdeling groeperen, en pas daarbinnen op plaats sorteren.
+      const perAfdeling = {};
+      Object.keys(mandje).forEach(id => {
         const p = vind(id);
+        if (!p) return;
+        const a = afdelingVan(p);
         const plaats = p.plaats || "";
-        return {
+        (perAfdeling[a] = perAfdeling[a] || []).push({
           sorteer: plaats === "" ? 999999 : (Number(plaats) || 999999),
           tekst: `${String(plaats || "?").padStart(3, " ")}  ${String(mandje[id]) + "x"}  `
                + `${toonNaam(p)}  (${p.id}, à ${euro(p.prijs_incl_btw)})`
-        };
+        });
       });
-      regels.sort((a, b) => a.sorteer - b.sorteer);
+
+      // Afdelingen in dezelfde volgorde als de knoppenbalk, zodat de pakbon
+      // je magazijn altijd in dezelfde richting laat aflopen.
+      const volgorde = AFDELING_VOLGORDE.filter(a => perAfdeling[a])
+        .concat(Object.keys(perAfdeling).filter(a => !AFDELING_VOLGORDE.includes(a)));
+      const meerdereAfdelingen = volgorde.length > 1;
+
+      let blokken = [], soorten = 0;
+      volgorde.forEach(a => {
+        const regels = perAfdeling[a].sort((x, y) => x.sorteer - y.sorteer);
+        soorten += regels.length;
+        const kop = meerdereAfdelingen
+          ? `\n— ${((AFDELINGEN[a] || {}).naam || a).toUpperCase()} —\n` : "";
+        blokken.push(kop + regels.map(r => r.tekst).join("\n"));
+      });
 
       const subtotaal = subtotaalMandje();
       const verzend = verzendkostVoor(subtotaal);
       const aantalStuks = Object.keys(mandje).reduce((s, id) => s + mandje[id], 0);
 
       return "PLAATS  AANTAL  PRODUCT\n"
-        + regels.map(r => r.tekst).join("\n")
-        + `\n\n${aantalStuks} stuks in ${regels.length} soorten`
+        + blokken.join("\n")
+        + `\n\n${aantalStuks} stuks in ${soorten} soorten`
         + `\nSubtotaal ${euro(subtotaal)} + Verzending ${verzend === 0 ? "gratis" : euro(verzend)}`
         + ` = TOTAAL ${euro(subtotaal + verzend)}`;
     }

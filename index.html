@@ -71,13 +71,19 @@
     .hero p{max-width:640px;margin:0 auto;color:#6b4b54;font-size:16px;line-height:1.55}
 
     /* ---- Afdelingen (Melissa / Montana / Diverse) ---- */
-    .afdelingen{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;
-      padding-bottom:16px;border-bottom:1px solid var(--lijn)}
-    .afdelingen button{border:1px solid var(--lijn);background:var(--wit);color:var(--inkt);
-      padding:10px 20px;border-radius:8px;font-size:15px;cursor:pointer;transition:all .12s}
-    .afdelingen button:hover{border-color:var(--rose)}
+    /* De afdelingsbalk is een niveau hoger dan de categoriebalk: eerst kies je
+       de winkel, dan pas het soort product. Daarom staat er een kopje boven en
+       zijn de knoppen groter en steviger dan de categorieknopjes eronder. */
+    .afdelingskop{font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+      color:var(--grijs);font-weight:700;margin-bottom:10px}
+    .afdelingen{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:22px;
+      padding-bottom:20px;border-bottom:2px solid var(--lijn)}
+    .afdelingen button{border:2px solid var(--lijn);background:var(--wit);color:var(--inkt);
+      padding:13px 26px;border-radius:10px;font-size:16px;font-weight:600;
+      cursor:pointer;transition:all .12s}
+    .afdelingen button:hover{border-color:var(--rose);background:var(--rose-licht)}
     .afdelingen button.actief{background:var(--rose-donker);border-color:var(--rose-donker);
-      color:#fff;font-weight:600}
+      color:#fff}
 
     /* ---- Categoriefilters ----
        Op een groot scherm: rijtje ronde knopjes naast elkaar.
@@ -253,8 +259,9 @@
       .hero p{font-size:14.5px;line-height:1.5}
 
       /* -- Afdelingsknoppen -- */
-      .afdelingen{gap:8px;margin-bottom:14px;padding-bottom:13px}
-      .afdelingen button{padding:9px 15px;font-size:14px;flex:1;min-width:110px}
+      .afdelingskop{font-size:11px;margin-bottom:8px}
+      .afdelingen{gap:8px;margin-bottom:16px;padding-bottom:15px}
+      .afdelingen button{padding:11px 14px;font-size:14px;flex:1;min-width:104px}
 
       /* -- HARMONICAMENU voor de categorieën --
          Dicht: één knop van één regel. Open: een nette lijst onder elkaar,
@@ -340,10 +347,13 @@
   </section>
 
   <main>
-    <div class="afdelingen" id="afdelingen" style="display:none"></div>
+    <div id="afdelingsblok" style="display:none">
+      <div class="afdelingskop">Kies een afdeling</div>
+      <div class="afdelingen" id="afdelingen"></div>
+    </div>
     <!-- Categoriekiezer. Op een pc zie je alleen de knopjes (#filters).
          Op een gsm zie je alleen de harmonicaknop, die de lijst open-/dichtklapt. -->
-    <div class="filterblok">
+    <div class="filterblok" id="filterblok">
       <button class="filterknop" id="filterknop" aria-expanded="false" aria-controls="filters">
         <span>Categorie: <strong id="filterknop-tekst">Alles</strong></span>
         <span class="pijl" aria-hidden="true">▼</span>
@@ -718,17 +728,25 @@
 
     // Bouw de afdelingsknoppen. Is er maar één afdeling met producten in?
     // Dan blijft de balk verborgen — kiezen uit één ding heeft geen zin.
+    // Welke afdelingen hebben zichtbare producten? Gebruikt door de knoppenbalk
+    // én door de categoriebalk, dus één functie voor allebei.
+    function maakAfdelingenLijst(){
+      const aanwezig = new Set(ALLE_PRODUCTEN.filter(p => p.naam && isZichtbaar(p)).map(afdelingVan));
+      return AFDELING_VOLGORDE.filter(s => aanwezig.has(s));
+    }
+
     function maakAfdelingen(){
       const vak = document.getElementById("afdelingen");
-      const aanwezig = new Set(ALLE_PRODUCTEN.filter(p => p.naam && isZichtbaar(p)).map(afdelingVan));
-      const sleutels = AFDELING_VOLGORDE.filter(s => aanwezig.has(s));
+      const blok = document.getElementById("afdelingsblok");
+      const sleutels = maakAfdelingenLijst();
 
+      // Eén afdeling? Dan is er niets te kiezen en blijft de balk weg.
       if (sleutels.length < 2){
-        vak.style.display = "none";
+        blok.style.display = "none";
         actieveAfdeling = "alles";
         return;
       }
-      vak.style.display = "flex";
+      blok.style.display = "block";
       vak.innerHTML = "";
 
       [["alles", "Alles"], ...sleutels.map(s => [s, (AFDELINGEN[s] || {}).naam || s])]
@@ -765,6 +783,16 @@
       const tel = cat => cat === "Alles"
         ? inAfdeling.length
         : inAfdeling.filter(p => p.categorie === cat).length;
+
+      // Categorieën horen bij één afdeling: "Haarclips" en "Leesbrillen" zijn
+      // geen keuzes uit dezelfde lijst. Kijkt de klant naar ALLE afdelingen
+      // tegelijk, dan verbergen we de categoriebalk — anders staan er veertien
+      // knoppen door elkaar en snapt niemand nog waar hij uit kiest.
+      // Bij één afdeling in de winkel blijft de balk gewoon staan.
+      const meerdereAfdelingen = maakAfdelingenLijst().length > 1;
+      const verbergen = meerdereAfdelingen && actieveAfdeling === "alles";
+      document.getElementById("filterblok").style.display = verbergen ? "none" : "";
+      if (verbergen) actieveCategorie = "Alles";
 
       const vak = document.getElementById("filters");
       vak.innerHTML = "";

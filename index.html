@@ -59,6 +59,15 @@
     }
 
     /* ---- Kopbalk bovenaan ---- */
+    /* Dun balkje bovenaan met de drie dingen die een nieuwe bezoeker
+       geruststellen. Staat BOVEN de kopbalk en scrolt gewoon mee weg —
+       het is een eerste indruk, geen knop die je altijd nodig hebt. */
+    .infobalk{background:var(--inkt);color:#fff;font-size:13.5px;text-align:center;
+      padding:9px 16px;letter-spacing:.2px}
+    .infobalk strong{color:#ffb27a;font-weight:700}
+    .infobalk .scheiding{opacity:.45;margin:0 10px}
+    .infobalk .weg-op-gsm{display:inline}
+
     header{
       position:sticky;top:0;z-index:20;background:var(--wit);
       border-bottom:1px solid var(--lijn);box-shadow:var(--schaduw);
@@ -174,6 +183,8 @@
     .aantal span{min-width:22px;text-align:center;font-weight:600}
     .mandje .voet{padding:18px 20px;border-top:1px solid var(--lijn)}
     .regelrij{display:flex;justify-content:space-between;font-size:14px;color:var(--grijs);margin-bottom:4px}
+    /* Gehaald = groen. Oranje blijft voor "je bent er bijna", groen voor "het is rond". */
+    .gratis-tip.gehaald{color:#1c6b3a;background:#e9f6ee}
     .gratis-tip{font-size:12.5px;color:var(--oranje-donker);background:var(--oranje-licht);border-radius:8px;
       padding:6px 10px;margin:6px 0 8px;text-align:center}
     .totaalregel{display:flex;justify-content:space-between;font-size:19px;font-weight:700;margin-bottom:4px;margin-top:6px}
@@ -270,6 +281,8 @@
 
       /* -- Kopbalk compacter: alles op één rij i.p.v. drie -- */
       .balk{padding:10px 14px;gap:9px;flex-wrap:nowrap}
+      .infobalk{font-size:12.5px;padding:8px 12px}
+      .infobalk .weg-op-gsm{display:none}
       .logo{flex-shrink:0}
       .logo img{height:34px}
       .logo span{display:none}        /* ondertitel staat al in de banner */
@@ -349,6 +362,10 @@
 
 <body>
   <!-- ---- 2) DE STRUCTUUR ---------------------------------------------- -->
+  <div class="infobalk">
+    <strong>Gratis verzending vanaf €40</strong><span class="weg-op-gsm"><span class="scheiding">·</span>Levering in 2–5 werkdagen<span class="scheiding">·</span>Veilig betalen met Bancontact</span>
+  </div>
+
   <header>
     <div class="balk">
       <div class="logo" id="logo">
@@ -980,13 +997,20 @@
         subtotaal === 0 ? "—" : (verzend === 0 ? "Gratis" : euro(verzend));
       document.getElementById("totaal").textContent = euro(subtotaal + verzend);
 
-      // tip: nog €X tot gratis verzending
+      // Tip over de verzendkosten. Zit de klant er nog onder, dan tonen we hoeveel
+      // hij mist. Zit hij erboven, dan bevestigen we dat hij het gehaald heeft —
+      // een beloning stilzwijgend toepassen werkt minder goed dan ze benoemen.
       const tip = document.getElementById("gratis-tip");
-      if (subtotaal > 0 && verzend > 0){
+      if (subtotaal <= 0){
+        tip.style.display = "none";
+      } else if (verzend > 0){
         tip.textContent = `Nog ${euro(VERZENDING.gratisVanaf - subtotaal)} tot gratis verzending!`;
+        tip.className = "gratis-tip";
         tip.style.display = "block";
       } else {
-        tip.style.display = "none";
+        tip.textContent = "Gelukt — je verzending is gratis!";
+        tip.className = "gratis-tip gehaald";
+        tip.style.display = "block";
       }
 
       document.getElementById("afreken").disabled = (aantalStuks === 0);

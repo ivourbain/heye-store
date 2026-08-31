@@ -13,6 +13,14 @@
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(--inkt);
       background:var(--achtergrond);line-height:1.6;min-height:100vh;display:flex;flex-direction:column}
+    .infobalk{background:var(--inkt);color:#fff;font-size:13.5px;text-align:center;
+      padding:9px 16px;letter-spacing:.2px}
+    .infobalk strong{color:#ffb27a;font-weight:700}
+    .infobalk .scheiding{opacity:.45;margin:0 10px}
+    @media (max-width:700px){
+      .infobalk{font-size:12.5px;padding:8px 12px}
+      .infobalk .weg-op-gsm{display:none}
+    }
     header{background:var(--wit);border-bottom:1px solid var(--lijn)}
     .balk{max-width:820px;margin:0 auto;padding:16px 22px}
     .logo img{display:block;height:40px;width:auto}
@@ -70,6 +78,10 @@
   </style>
 </head>
 <body>
+  <div class="infobalk">
+    <strong>Gratis verzending vanaf €40</strong><span class="weg-op-gsm"><span class="scheiding">·</span>Levering in 2–5 werkdagen<span class="scheiding">·</span>Veilig betalen met Bancontact</span>
+  </div>
+
   <header><div class="balk"><a class="logo" href="index.html"><img src="logo.png" alt="Heye Store" width="218" height="120"></a></div></header>
   <main>
 

@@ -18,21 +18,36 @@
   <!-- Deze zin toont Google onder de link naar je winkel. -->
   <meta name="description" content="Heye Store: haar- en verzorgingsaccessoires van Melissa — haarclips, kammen, borstels, kwasten en meer. Levering in België, gratis verzending vanaf €40.">
   <!-- Kleurt de balk bovenaan de browser op een gsm in de huiskleur. -->
-  <meta name="theme-color" content="#c76b83">
+  <meta name="theme-color" content="#ff6600">
+  <!-- Het icoontje in het browsertabblad en op het beginscherm van een gsm. -->
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
   <style>
     /* ---- 1) DE OPMAAK -------------------------------------------------
        Kleuren staan bovenaan als "variabelen": pas hier één keer aan
        en het verandert overal op de pagina. */
+    /* ---- De kleuren van de winkel --------------------------------------
+       Alles komt uit het logo: oranje #FF6600 en zwart. Wil je ooit iets
+       aanpassen, doe het hier — de rest van het bestand verwijst enkel nog
+       naar deze namen.
+
+       Waarom drie oranjes? Zuiver #FF6600 is prachtig als vlak, maar witte
+       tekst erop is slecht leesbaar (contrast 2,9 waar 4,5 nodig is). Daarom:
+         --oranje         het merkoranje. Vlakken met DONKERE tekst erop (5,9 ✔)
+         --oranje-donker  voor tekst op wit, en vlakken met WITTE tekst (4,9 ✔)
+         --oranje-licht   zachte achtergrond, voor de banner en hover           */
     :root{
-      --rose:#c76b83;          /* huiskleur van de winkel */
-      --rose-donker:#a24d64;
-      --inkt:#2c2427;          /* tekstkleur */
-      --grijs:#7a7075;
-      --lijn:#ece4e6;
-      --achtergrond:#fbf7f7;
+      --oranje:#ff6600;        /* hoofdkleur, rechtstreeks uit het logo */
+      --oranje-donker:#c24a00; /* leesbare variant voor tekst */
+      --oranje-licht:#fff4ed;  /* zachte achtergrond */
+      --inkt:#1a1a1a;          /* tekstkleur — het zwart van het logo */
+      --grijs:#6e6a66;
+      --lijn:#eae5e0;
+      --rand:#d9d3cd;          /* iets steviger lijn, voor invulvakken */
+      --achtergrond:#faf8f6;
       --wit:#ffffff;
-      --schaduw:0 4px 18px rgba(120,70,85,.08);
+      --schaduw:0 4px 18px rgba(90,55,20,.10);
     }
     *{box-sizing:border-box;margin:0;padding:0}
     body{
@@ -47,27 +62,29 @@
     }
     .balk{max-width:1150px;margin:0 auto;padding:14px 20px;
       display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-    .logo{font-size:26px;font-weight:700;letter-spacing:.5px;color:var(--rose-donker)}
-    .logo span{font-weight:400;color:var(--grijs);font-size:14px;display:block;letter-spacing:0}
+        /* Het logo is een afbeelding met een doorzichtige achtergrond. De hoogte
+       staat vast, de breedte volgt vanzelf, zodat hij nooit vervormt. */
+    .logo img{display:block;height:46px;width:auto}
+    .logo span{font-weight:400;color:var(--grijs);font-size:14px;display:block;letter-spacing:0;margin-top:3px}
     .zoek{flex:1;min-width:180px}
     .zoek input{
       width:100%;padding:11px 16px;border:1px solid var(--lijn);border-radius:30px;
       font-size:15px;background:var(--achtergrond);outline:none}
-    .zoek input:focus{border-color:var(--rose)}
+    .zoek input:focus{border-color:var(--oranje)}
     .mandknop{
-      position:relative;border:none;cursor:pointer;background:var(--rose);color:#fff;
+      position:relative;border:none;cursor:pointer;background:var(--oranje);color:var(--inkt);
       padding:11px 20px;border-radius:30px;font-size:15px;font-weight:600}
-    .mandknop:hover{background:var(--rose-donker)}
+    .mandknop:hover{background:#e85c00}
     .badge{
       position:absolute;top:-7px;right:-7px;background:var(--inkt);color:#fff;
       min-width:22px;height:22px;border-radius:11px;font-size:12px;font-weight:700;
       display:flex;align-items:center;justify-content:center;padding:0 5px}
 
     /* ---- Welkomstbanner ---- */
-    .hero{background:linear-gradient(135deg,#f7e3e8 0%,#f3d9e0 55%,#eccdd7 100%);
+    .hero{background:linear-gradient(135deg,#fff1e6 0%,#ffe3cd 55%,#ffd4b3 100%);
       border-bottom:1px solid var(--lijn)}
     .hero-inner{max-width:1150px;margin:0 auto;padding:40px 20px 44px;text-align:center}
-    .hero h1{font-size:30px;color:var(--rose-donker);margin-bottom:10px;line-height:1.2;text-wrap:balance}
+    .hero h1{font-size:30px;color:var(--oranje-donker);margin-bottom:10px;line-height:1.2;text-wrap:balance}
     .hero p{max-width:640px;margin:0 auto;color:#6b4b54;font-size:16px;line-height:1.55}
 
     /* ---- Afdelingen (Melissa / Montana / Diverse) ---- */
@@ -81,8 +98,11 @@
     .afdelingen button{border:2px solid var(--lijn);background:var(--wit);color:var(--inkt);
       padding:13px 26px;border-radius:10px;font-size:16px;font-weight:600;
       cursor:pointer;transition:all .12s}
-    .afdelingen button:hover{border-color:var(--rose);background:var(--rose-licht)}
-    .afdelingen button.actief{background:var(--rose-donker);border-color:var(--rose-donker);
+    .afdelingen button:hover{border-color:var(--oranje);background:var(--oranje-licht)}
+    /* De afdelingsknop is het hoogste niveau en krijgt het zwart van het logo;
+       de categorieknopjes eronder krijgen het oranje. Zo zie je meteen welke
+       rij boven de andere staat, met twee kleuren die allebei uit het logo komen. */
+    .afdelingen button.actief{background:var(--inkt);border-color:var(--inkt);
       color:#fff}
 
     /* ---- Categoriefilters ----
@@ -95,8 +115,8 @@
     .filters button{border:1px solid var(--lijn);background:var(--wit);color:var(--inkt);
       padding:8px 16px;border-radius:30px;font-size:14px;cursor:pointer;transition:all .12s;
       font-family:inherit}
-    .filters button:hover{border-color:var(--rose)}
-    .filters button.actief{background:var(--rose);border-color:var(--rose);color:#fff;font-weight:600}
+    .filters button:hover{border-color:var(--oranje)}
+    .filters button.actief{background:var(--oranje);border-color:var(--oranje);color:var(--inkt);font-weight:700}
     .f-aantal{display:none}            /* het aantal tonen we enkel in de harmonica */
 
     /* ---- Productrooster ---- */
@@ -112,19 +132,19 @@
     .kaart .foto img{max-width:100%;max-height:100%;object-fit:contain}
     .kaart .inhoud{padding:12px 14px 16px;display:flex;flex-direction:column;gap:10px;flex:1}
     .kaart .naam{font-size:14px;font-weight:600;min-height:38px}
-    .kaart .prijs{font-size:19px;font-weight:700;color:var(--rose-donker)}
+    .kaart .prijs{font-size:19px;font-weight:700;color:var(--oranje-donker)}
     /* Keuzelijstje voor producten met varianten (bv. de sterkte van een leesbril) */
     .kaart .variantregel{display:flex;flex-direction:column;gap:4px}
     .kaart .variantregel span{font-size:12px;color:var(--grijs);font-weight:600}
     .kaart select.variant{
       width:100%;padding:8px 10px;border:1px solid var(--rand);border-radius:8px;
-      background:#fff;font-family:inherit;font-size:14px;color:var(--tekst);cursor:pointer;
+      background:#fff;font-family:inherit;font-size:14px;color:var(--inkt);cursor:pointer;
     }
-    .kaart select.variant:focus{outline:2px solid var(--rose);outline-offset:1px}
+    .kaart select.variant:focus{outline:2px solid var(--oranje);outline-offset:1px}
     .kaart button{
-      margin-top:auto;border:1px solid var(--rose);background:#fff;color:var(--rose-donker);
+      margin-top:auto;border:1px solid var(--oranje);background:#fff;color:var(--oranje-donker);
       padding:9px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
-    .kaart button:hover{background:var(--rose);color:#fff}
+    .kaart button:hover{background:var(--oranje);color:var(--inkt)}
     .leeg{text-align:center;color:var(--grijs);padding:60px 0}
 
     /* ---- Winkelmandje (schuift in van rechts) ---- */
@@ -151,13 +171,13 @@
     .aantal span{min-width:22px;text-align:center;font-weight:600}
     .mandje .voet{padding:18px 20px;border-top:1px solid var(--lijn)}
     .regelrij{display:flex;justify-content:space-between;font-size:14px;color:var(--grijs);margin-bottom:4px}
-    .gratis-tip{font-size:12.5px;color:var(--rose-donker);background:#fff6f8;border-radius:8px;
+    .gratis-tip{font-size:12.5px;color:var(--oranje-donker);background:var(--oranje-licht);border-radius:8px;
       padding:6px 10px;margin:6px 0 8px;text-align:center}
     .totaalregel{display:flex;justify-content:space-between;font-size:19px;font-weight:700;margin-bottom:4px;margin-top:6px}
     .btw{font-size:12px;color:var(--grijs);margin-bottom:14px}
-    .afreken{width:100%;background:var(--rose);color:#fff;border:none;padding:14px;
+    .afreken{width:100%;background:var(--oranje);color:var(--inkt);border:none;padding:14px;
       border-radius:12px;font-size:16px;font-weight:600;cursor:pointer}
-    .afreken:hover{background:var(--rose-donker)}
+    .afreken:hover{background:#e85c00}
     .afreken:disabled{background:var(--lijn);color:var(--grijs);cursor:not-allowed}
     .mand-leeg{text-align:center;color:var(--grijs);padding:50px 10px}
 
@@ -180,14 +200,14 @@
     .betaal-gegevens > .bg-rij > span:first-child{color:var(--grijs);flex-shrink:0}
     .bg-waarde{display:flex;align-items:center;gap:8px;justify-content:flex-end;flex-wrap:wrap}
     .bg-waarde strong{color:var(--inkt);word-break:break-all;text-align:right}
-    .kopieer{border:1px solid var(--rose);background:#fff;color:var(--rose-donker);border-radius:7px;
+    .kopieer{border:1px solid var(--oranje);background:#fff;color:var(--oranje-donker);border-radius:7px;
       padding:4px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
-    .kopieer:hover{background:var(--rose);color:#fff}
+    .kopieer:hover{background:var(--oranje);color:var(--inkt)}
     .kopieer.ok{background:#2e7d4f;border-color:#2e7d4f;color:#fff}
-    .gsm-tip{font-size:13px;color:var(--inkt);background:#fff6f8;border:1px solid #f0d3db;
+    .gsm-tip{font-size:13px;color:var(--inkt);background:var(--oranje-licht);border:1px solid #ffd9c2;
       border-radius:10px;padding:10px 14px;margin-bottom:14px;line-height:1.5;text-align:left}
     .betaal-tip{font-size:12.5px;color:var(--grijs);margin-bottom:16px;line-height:1.5}
-    .bedankt{width:64px;height:64px;border-radius:50%;background:var(--rose);color:#fff;
+    .bedankt{width:64px;height:64px;border-radius:50%;background:var(--oranje-donker);color:#fff;
       font-size:34px;display:flex;align-items:center;justify-content:center;margin:6px auto 14px}
 
     /* ---- Afrekenformulier (velden) ---- */
@@ -195,14 +215,14 @@
     .veld label{display:block;font-size:13px;color:var(--grijs);margin-bottom:4px;font-weight:600}
     .veld input, .veld textarea{width:100%;padding:10px 12px;border:1px solid var(--lijn);
       border-radius:9px;font-size:15px;font-family:inherit;background:var(--achtergrond);outline:none}
-    .veld input:focus, .veld textarea:focus{border-color:var(--rose)}
+    .veld input:focus, .veld textarea:focus{border-color:var(--oranje)}
     .tweekolom{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .akkoord{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--inkt);
       margin:6px 0 16px;line-height:1.5}
     .akkoord input{margin-top:2px;flex-shrink:0}
     .wis-link{display:inline-block;font-size:12.5px;color:var(--grijs);margin:-6px 0 14px}
-    .wis-link:hover{color:var(--rose-donker)}
-    .afreken-tweede{width:100%;background:#fff;color:var(--rose-donker);border:1px solid var(--rose);
+    .wis-link:hover{color:var(--oranje-donker)}
+    .afreken-tweede{width:100%;background:#fff;color:var(--oranje-donker);border:1px solid var(--oranje);
       padding:13px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px}
     .afreken-tweede:hover{background:var(--achtergrond)}
     .keuze-fout{color:#b3261e;font-size:13px;margin-top:12px;text-align:center}
@@ -212,7 +232,7 @@
     footer .voet{max-width:1150px;margin:0 auto;padding:22px 20px;display:flex;gap:14px;
       flex-wrap:wrap;justify-content:space-between;align-items:center;font-size:13px;color:var(--grijs)}
     footer .voet a{color:var(--grijs);text-decoration:none;margin-right:16px}
-    footer .voet a:hover{color:var(--rose-donker)}
+    footer .voet a:hover{color:var(--oranje-donker)}
     /* ---- Bestelbon (op het scherm én op papier) ---- */
     .bon{text-align:left;border:1px solid var(--lijn);border-radius:12px;
       padding:18px;margin:18px 0 4px;background:#fff}
@@ -247,7 +267,8 @@
 
       /* -- Kopbalk compacter: alles op één rij i.p.v. drie -- */
       .balk{padding:10px 14px;gap:9px;flex-wrap:nowrap}
-      .logo{font-size:19px;flex-shrink:0}
+      .logo{flex-shrink:0}
+      .logo img{height:34px}
       .logo span{display:none}        /* ondertitel staat al in de banner */
       .zoek{min-width:0}              /* mag krimpen i.p.v. een rij afdwingen */
       .zoek input{padding:9px 14px;font-size:15px}
@@ -271,7 +292,7 @@
         background:var(--wit);border:1px solid var(--lijn);border-radius:12px;
         padding:13px 16px;font-size:15px;color:var(--inkt);cursor:pointer;
         font-family:inherit;text-align:left}
-      .filterknop strong{color:var(--rose-donker)}
+      .filterknop strong{color:var(--oranje-donker)}
       .filterknop .pijl{color:var(--grijs);font-size:13px;transition:transform .2s}
       .filterknop.open{border-radius:12px 12px 0 0}
       .filterknop.open .pijl{transform:rotate(180deg)}
@@ -284,9 +305,9 @@
         border:none;border-top:1px solid var(--lijn);border-radius:0;
         padding:13px 16px;font-size:15px;display:flex;justify-content:space-between;
         align-items:center;gap:12px;width:100%;text-align:left}
-      .filters button.actief{background:#fff6f8;color:var(--rose-donker);font-weight:700}
+      .filters button.actief{background:var(--oranje-licht);color:var(--oranje-donker);font-weight:700}
       .f-aantal{display:inline;color:var(--grijs);font-size:13px;font-weight:400}
-      .filters button.actief .f-aantal{color:var(--rose-donker)}
+      .filters button.actief .f-aantal{color:var(--oranje-donker)}
 
       /* -- Producten: 2 naast elkaar i.p.v. 1 groot -- */
       main{padding:16px 14px 44px}
@@ -327,7 +348,10 @@
   <!-- ---- 2) DE STRUCTUUR ---------------------------------------------- -->
   <header>
     <div class="balk">
-      <div class="logo" id="logo">HEYE STORE<span id="logo-onder">haar- &amp; verzorgingsaccessoires</span></div>
+      <div class="logo" id="logo">
+        <img src="logo.png" alt="Heye Store" width="218" height="120">
+        <span id="logo-onder">haar- &amp; verzorgingsaccessoires</span>
+      </div>
       <div class="zoek">
         <input id="zoekveld" type="search" placeholder="Zoek een product… (bv. haarclip, leesbril, kam)">
       </div>

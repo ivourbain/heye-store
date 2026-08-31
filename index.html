@@ -28,18 +28,21 @@
        Kleuren staan bovenaan als "variabelen": pas hier één keer aan
        en het verandert overal op de pagina. */
     /* ---- De kleuren van de winkel --------------------------------------
-       Alles komt uit het logo: oranje #FF6600 en zwart. Wil je ooit iets
-       aanpassen, doe het hier — de rest van het bestand verwijst enkel nog
-       naar deze namen.
+       Alles komt uit het logo: oranje en zwart. Wil je ooit iets aanpassen,
+       doe het hier — de rest van het bestand verwijst enkel nog naar deze namen.
 
-       Waarom drie oranjes? Zuiver #FF6600 is prachtig als vlak, maar witte
-       tekst erop is slecht leesbaar (contrast 2,9 waar 4,5 nodig is). Daarom:
-         --oranje         het merkoranje. Vlakken met DONKERE tekst erop (5,9 ✔)
-         --oranje-donker  voor tekst op wit, en vlakken met WITTE tekst (4,9 ✔)
-         --oranje-licht   zachte achtergrond, voor de banner en hover           */
+       Het zuivere logo-oranje is #FF6600. Dat staat in het logo zelf, maar
+       NIET op de knoppen: witte tekst daarop haalt een contrast van 2,9 waar
+       4,5 het minimum is — moeilijk leesbaar op een gsm in de zon, of voor
+       iemand die net een leesbril nodig heeft. De knoppen gebruiken daarom
+       #C95000: dezelfde kleurtoon, een tikje dieper, contrast 4,5 ✔
+
+         --oranje         de werkkleur: knopvlakken en actieve knopjes
+         --oranje-donker  tekst op wit (prijzen, koppen) en de hover van knoppen
+         --oranje-licht   zachte achtergrond voor de banner en tips             */
     :root{
-      --oranje:#ff6600;        /* hoofdkleur, rechtstreeks uit het logo */
-      --oranje-donker:#c24a00; /* leesbare variant voor tekst */
+      --oranje:#c95000;        /* werkkleur — dieper dan het logo-oranje */
+      --oranje-donker:#a84200; /* tekst op wit + hover van gevulde knoppen */
       --oranje-licht:#fff4ed;  /* zachte achtergrond */
       --inkt:#1a1a1a;          /* tekstkleur — het zwart van het logo */
       --grijs:#6e6a66;
@@ -72,9 +75,9 @@
       font-size:15px;background:var(--achtergrond);outline:none}
     .zoek input:focus{border-color:var(--oranje)}
     .mandknop{
-      position:relative;border:none;cursor:pointer;background:var(--oranje);color:var(--inkt);
+      position:relative;border:none;cursor:pointer;background:var(--oranje);color:#fff;
       padding:11px 20px;border-radius:30px;font-size:15px;font-weight:600}
-    .mandknop:hover{background:#e85c00}
+    .mandknop:hover{background:#a84200}
     .badge{
       position:absolute;top:-7px;right:-7px;background:var(--inkt);color:#fff;
       min-width:22px;height:22px;border-radius:11px;font-size:12px;font-weight:700;
@@ -116,7 +119,7 @@
       padding:8px 16px;border-radius:30px;font-size:14px;cursor:pointer;transition:all .12s;
       font-family:inherit}
     .filters button:hover{border-color:var(--oranje)}
-    .filters button.actief{background:var(--oranje);border-color:var(--oranje);color:var(--inkt);font-weight:700}
+    .filters button.actief{background:var(--oranje);border-color:var(--oranje);color:#fff;font-weight:700}
     .f-aantal{display:none}            /* het aantal tonen we enkel in de harmonica */
 
     /* ---- Productrooster ---- */
@@ -144,7 +147,7 @@
     .kaart button{
       margin-top:auto;border:1px solid var(--oranje);background:#fff;color:var(--oranje-donker);
       padding:9px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
-    .kaart button:hover{background:var(--oranje);color:var(--inkt)}
+    .kaart button:hover{background:var(--oranje);color:#fff}
     .leeg{text-align:center;color:var(--grijs);padding:60px 0}
 
     /* ---- Winkelmandje (schuift in van rechts) ---- */
@@ -175,9 +178,9 @@
       padding:6px 10px;margin:6px 0 8px;text-align:center}
     .totaalregel{display:flex;justify-content:space-between;font-size:19px;font-weight:700;margin-bottom:4px;margin-top:6px}
     .btw{font-size:12px;color:var(--grijs);margin-bottom:14px}
-    .afreken{width:100%;background:var(--oranje);color:var(--inkt);border:none;padding:14px;
+    .afreken{width:100%;background:var(--oranje);color:#fff;border:none;padding:14px;
       border-radius:12px;font-size:16px;font-weight:600;cursor:pointer}
-    .afreken:hover{background:#e85c00}
+    .afreken:hover{background:#a84200}
     .afreken:disabled{background:var(--lijn);color:var(--grijs);cursor:not-allowed}
     .mand-leeg{text-align:center;color:var(--grijs);padding:50px 10px}
 
@@ -202,12 +205,12 @@
     .bg-waarde strong{color:var(--inkt);word-break:break-all;text-align:right}
     .kopieer{border:1px solid var(--oranje);background:#fff;color:var(--oranje-donker);border-radius:7px;
       padding:4px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
-    .kopieer:hover{background:var(--oranje);color:var(--inkt)}
+    .kopieer:hover{background:var(--oranje);color:#fff}
     .kopieer.ok{background:#2e7d4f;border-color:#2e7d4f;color:#fff}
     .gsm-tip{font-size:13px;color:var(--inkt);background:var(--oranje-licht);border:1px solid #ffd9c2;
       border-radius:10px;padding:10px 14px;margin-bottom:14px;line-height:1.5;text-align:left}
     .betaal-tip{font-size:12.5px;color:var(--grijs);margin-bottom:16px;line-height:1.5}
-    .bedankt{width:64px;height:64px;border-radius:50%;background:var(--oranje-donker);color:#fff;
+    .bedankt{width:64px;height:64px;border-radius:50%;background:var(--oranje);color:#fff;
       font-size:34px;display:flex;align-items:center;justify-content:center;margin:6px auto 14px}
 
     /* ---- Afrekenformulier (velden) ---- */

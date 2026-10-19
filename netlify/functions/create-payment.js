@@ -19,6 +19,7 @@ const fs = require("fs");
 const path = require("path");
 // Kortingscodes: welke geldig zijn en hoe de korting berekend wordt
 const { zoekCode, kortingBedrag } = require("./_gedeeld/korting");
+const { sluitAan } = require("./_gedeeld/opslag");
 
 // ⚙️ VERZENDKOSTEN staan niet meer hier, maar in instellingen.js — hetzelfde
 //    bestand dat de webshop gebruikt. Zo kunnen browser en server nooit meer
@@ -203,7 +204,12 @@ exports.handler = async (event) => {
   let korting = 0;
   let kortingInfo = null;
   if (data.kortingscode) {
-    kortingInfo = zoekCode(data.kortingscode, instellingen);
+    try {
+      sluitAan(event);   // opslag met de persoonlijke welkomstcodes
+      kortingInfo = await zoekCode(data.kortingscode, instellingen);
+    } catch (e) {
+      return { statusCode: 503, body: JSON.stringify({ error: "Kortingscode kon nu niet gecontroleerd worden" }) };
+    }
     if (!kortingInfo.geldig) {
       return { statusCode: 400, body: JSON.stringify({ error: `Kortingscode: ${kortingInfo.reden}` }) };
     }

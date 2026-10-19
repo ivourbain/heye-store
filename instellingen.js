@@ -26,7 +26,10 @@
 //                postcode (4 cijfers).
 //    korting     kortingscodes: actief (true/false), percentage (bv. 15) en
 //                minimum (bestelbedrag aan producten vanaf wanneer de code
-//                werkt, 0 = geen minimum). De codes zelf staan NIET hier
+//                werkt, 0 = geen minimum). welkom (true/false) = het vakje
+//                "welkomstkorting aanvragen" in de banner tonen; geldigDagen =
+//                hoe lang een persoonlijke welkomstcode geldig is.
+//                De vaste codes (bv. voor een flyer) staan NIET hier
 //                (dit bestand kan iedereen lezen) maar geheim in Netlify:
 //                Environment variables -> KORTINGSCODES
 //    infobalk    het zwarte balkje bovenaan elke pagina. Je mag deze
@@ -75,7 +78,9 @@ const INSTELLINGEN = {
   "korting": {
     "actief": true,
     "percentage": 15,
-    "minimum": 25
+    "minimum": 25,
+    "welkom": true,
+    "geldigDagen": 30
   },
   "infobalk": {
     "vet": "Gratis verzending vanaf {gratisVanaf}",

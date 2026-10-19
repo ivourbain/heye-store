@@ -35,6 +35,9 @@ const METHODE = {
   ideal: "iDEAL", applepay: "Apple Pay", paypal: "PayPal", banktransfer: "Overschrijving"
 };
 
+const { markeerGebruikt } = require("./_gedeeld/korting");
+const { sluitAan } = require("./_gedeeld/opslag");
+
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
@@ -68,8 +71,20 @@ exports.handler = async (event) => {
     return { statusCode: 200, body: `Status ${betaling.status} — nog niets te melden` };
   }
 
-  // 2) Melding als Netlify-formulier "betaling" insturen -> jij krijgt een mail
   const md = betaling.metadata || {};
+
+  // Betaald met een persoonlijke welkomstcode? Dan is die code nu opgebruikt.
+  // Lukt dat niet, dan laten we de melding hieronder gewoon doorgaan.
+  if (betaling.status === "paid" && md.kortingscode) {
+    try {
+      sluitAan(event);
+      await markeerGebruikt(md.kortingscode, md.bestelnummer, "online");
+    } catch (e) {
+      console.log("Kortingscode niet als gebruikt gemarkeerd:", e.message);
+    }
+  }
+
+  // 2) Melding als Netlify-formulier "betaling" insturen -> jij krijgt een mail
   const bedrag = betaling.amount ? `€${String(betaling.amount.value).replace(".", ",")}` : "";
   const velden = {
     "form-name":     "betaling",

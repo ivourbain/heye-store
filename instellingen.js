@@ -15,7 +15,8 @@
 //    - bedragen met een punt: 4.95 (niet 4,95)
 //
 //  Wat staat waar:
-//    thema       kleur van de winkel: "oranje" (echte winkel) of "blauw" (testwinkel)
+//    thema       kleur van de winkel: "blauw" (echte winkel), "paars" (testwinkel)
+//                of "oranje" (de oorspronkelijke kleur)
 //    winkel      naam voor de klant, regel onder het logo, begin van het bestelnummer
 //    bedrijf     juridische gegevens (voorwaarden, privacy, retour, voetbalk)
 //    betaling    rekening voor de QR-overschrijving
@@ -33,7 +34,7 @@
 // ============================================================
 
 const INSTELLINGEN = {
-  "thema": "oranje",
+  "thema": "blauw",
   "winkel": {
     "toonnaam": "Heye Store",
     "slogan": "haaraccessoires & brillen",

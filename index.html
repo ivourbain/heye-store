@@ -60,7 +60,7 @@
          --oranje-donker  tekst op wit (prijzen, koppen) en de hover van knoppen
          --oranje-licht   zachte achtergrond voor de banner en tips             */
     /* De namen zeggen "oranje", maar het is de HUISKLEUR: in instellingen.js kies je
-       met "thema" een ander kleurenschema (bv. blauw voor de testwinkel). vul-in.js
+       met "thema" een ander kleurenschema (bv. paars voor de testwinkel). vul-in.js
        vervangt dan deze waarden. Staat er "oranje", dan blijven ze exact zoals hier. */
     :root{
       --oranje:#c95000;        /* werkkleur — dieper dan het logo-oranje */
@@ -1386,7 +1386,8 @@
       document.getElementById("f-betaalwijze").value =
         betaalwijze === "online"
           ? `Online gekozen (Mollie) — ${euro(huidigTotaal)} — ⚠️ NOG NIET BEVESTIGD. `
-            + `Controleer eerst het Mollie-dashboard (bestelnummer ${huidigeMededeling}) vóór je verzendt.`
+            + `Wacht op de aparte mail "BETAALD ✓" voor bestelnummer ${huidigeMededeling} vóór je verzendt. `
+            + `Geen mail? Dan is er niet betaald (of kijk in het Mollie-dashboard).`
           : `Overschrijving — ${euro(huidigTotaal)} nog te ontvangen, mededeling ${huidigeMededeling}`;
       try {
         // Netlify vangt dit op; jij ziet elke bestelling in je Netlify-dashboard
@@ -1453,6 +1454,16 @@
     tekenMandje();
   </script>  <!-- Alleen zichtbaar bij afdrukken: de bestelbon op papier -->
   <div id="bon-print"></div>
+
+  <!-- Verborgen formulier "betaling". De klant ziet dit nooit. Het staat hier enkel
+       zodat Netlify het formulier kent: mollie-webhook.js stuurt het in zodra Mollie
+       een betaling bevestigt, en Netlify mailt het dan naar jou ("BETAALD ✓").
+       De veldnamen moeten gelijk blijven aan die in mollie-webhook.js. -->
+  <form name="betaling" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <input name="bestelnummer"><input name="status"><input name="bedrag">
+    <input name="betaalmethode"><input name="email"><input name="mollie_id">
+    <input name="tijdstip"><input name="bot-field">
+  </form>
 
 </body>
 </html>

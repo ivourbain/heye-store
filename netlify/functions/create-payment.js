@@ -224,6 +224,9 @@ exports.handler = async (event) => {
     amount: { currency: "EUR", value: bedrag.toFixed(2) },   // bv. "12.90"
     description: `${winkelnaam} bestelling ${bestelnummer}`,
     redirectUrl: `${siteUrl}/betaald.html?bestelnummer=${encodeURIComponent(bestelnummer)}`,
+    // Mollie meldt elke statuswijziging aan dit adres (zie mollie-webhook.js).
+    // Enkel op een echt https-adres: Mollie kan een lokale testserver niet bereiken.
+    ...(siteUrl.startsWith("https://") ? { webhookUrl: `${siteUrl}/.netlify/functions/mollie-webhook` } : {}),
     metadata: {
       bestelnummer: bestelnummer,
       email: email,

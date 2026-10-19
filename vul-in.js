@@ -5,7 +5,7 @@
 //  Het doet drie dingen:
 //
 //  0) De kleuren van de winkel zetten, volgens "thema" in instellingen.js
-//     ("oranje" = de echte winkel, "blauw" = de testwinkel). Dat gebeurt
+//     ("blauw" = de echte winkel, "paars" = de testwinkel, "oranje" = de oude kleur). Dat gebeurt
 //     meteen, nog vóór de pagina getekend wordt.
 //
 //  1) Het zwarte infobalkje bovenaan opbouwen
@@ -52,6 +52,12 @@
       "--accent-zacht": "#90caf9", "--rand-accent": "#bbdefb",
       "--hero-1": "#eef5fd", "--hero-2": "#dceafb", "--hero-3": "#c5dbf7", "--hero-tekst": "#33476a",
       browserbalk: "#1565c0"
+    },
+    paars: {
+      "--oranje": "#7b1fa2", "--oranje-donker": "#5c1580", "--oranje-licht": "#f6eefa",
+      "--accent-zacht": "#ce93d8", "--rand-accent": "#e1bee7",
+      "--hero-1": "#f8f1fb", "--hero-2": "#efe0f6", "--hero-3": "#e6cff0", "--hero-tekst": "#4a3557",
+      browserbalk: "#7b1fa2"
     }
   };
   const thema = THEMAS[I.thema] || THEMAS.oranje;

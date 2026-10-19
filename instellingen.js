@@ -56,7 +56,7 @@ const INSTELLINGEN = {
     "bic": ""
   },
   "verzending": {
-    "kosten": 4.95,
+    "kosten": 6.95,
     "gratisVanaf": 40,
     "leveringMin": 2,
     "leveringMax": 5

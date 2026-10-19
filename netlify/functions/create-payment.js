@@ -18,12 +18,10 @@
 const fs = require("fs");
 const path = require("path");
 
-// ⚙️ VERZENDKOSTEN — deze twee getallen moeten GELIJK zijn aan die in
-//    index.html (const VERZENDING). Pas je er één aan, pas dan ook de
-//    andere aan. Ziet de server een ander bedrag dan de browser toonde,
-//    dan weigert hij de betaling (zie de controle verderop) — zo merk je
-//    een vergeten aanpassing meteen, in plaats van pas bij je boekhouding.
-const VERZENDING = { kosten: 4.95, gratisVanaf: 40 };
+// ⚙️ VERZENDKOSTEN staan niet meer hier, maar in instellingen.js — hetzelfde
+//    bestand dat de webshop gebruikt. Zo kunnen browser en server nooit meer
+//    van elkaar afwijken. (De controle op het schermbedrag verderop blijft
+//    staan als extra vangnet.)
 
 // Veiligheidsgrenzen: een echte bestelling blijft hier ruim onder.
 const MAX_SOORTEN     = 100;   // hoeveel verschillende producten in één mandje
@@ -69,6 +67,44 @@ function leesProducten() {
   throw new Error("products.js niet gevonden of onleesbaar op de server");
 }
 
+// ---- instellingen.js inlezen ---------------------------------------
+// Ook dit bestand is voor de browser geschreven ("const INSTELLINGEN = {...};").
+// Na "const INSTELLINGEN =" tot de laatste } staat nette JSON.
+let instellingenCache = null;
+
+function leesInstellingen() {
+  if (instellingenCache) return instellingenCache;
+
+  const kandidaten = [
+    path.join(process.cwd(), "instellingen.js"),
+    path.join(__dirname, "instellingen.js"),
+    path.join(__dirname, "..", "..", "instellingen.js"),
+    "/var/task/instellingen.js"
+  ];
+
+  for (const bestand of kandidaten) {
+    try {
+      const tekst = fs.readFileSync(bestand, "utf8");
+      const merk  = tekst.indexOf("const INSTELLINGEN");
+      if (merk < 0) continue;
+      const start = tekst.indexOf("{", merk);
+      const eind  = tekst.lastIndexOf("}");
+      if (start < 0 || eind < start) continue;
+
+      const inst = JSON.parse(tekst.slice(start, eind + 1));
+      const v = inst.verzending || {};
+      // Liever geen betaling dan een betaling met onzinnige verzendkosten.
+      if (!(Number(v.kosten) >= 0) || !(Number(v.gratisVanaf) > 0)) continue;
+
+      instellingenCache = inst;
+      return inst;
+    } catch (e) {
+      // dit pad werkte niet, probeer het volgende
+    }
+  }
+  throw new Error("instellingen.js niet gevonden of onleesbaar op de server");
+}
+
 // Afronden op hele centen. Zonder dit krijg je 2,9 x 3 = 8.700000000000001.
 function centen(bedrag) {
   return Math.round(bedrag * 100) / 100;
@@ -111,6 +147,18 @@ exports.handler = async (event) => {
   } catch (e) {
     return { statusCode: 500, body: JSON.stringify({ error: "Productlijst niet leesbaar op de server" }) };
   }
+
+  let instellingen;
+  try {
+    instellingen = leesInstellingen();
+  } catch (e) {
+    return { statusCode: 500, body: JSON.stringify({ error: "Instellingen niet leesbaar op de server" }) };
+  }
+  const VERZENDING = {
+    kosten:      Number(instellingen.verzending.kosten),
+    gratisVanaf: Number(instellingen.verzending.gratisVanaf)
+  };
+  const winkelnaam = (instellingen.winkel && instellingen.winkel.toonnaam) || "Heye Store";
 
   const ids = Object.keys(mandjeIn);
   if (ids.length === 0 || ids.length > MAX_SOORTEN) {
@@ -174,7 +222,7 @@ exports.handler = async (event) => {
   // De betaling die we bij Mollie aanmaken
   const betaling = {
     amount: { currency: "EUR", value: bedrag.toFixed(2) },   // bv. "12.90"
-    description: `Heye Store bestelling ${bestelnummer}`,
+    description: `${winkelnaam} bestelling ${bestelnummer}`,
     redirectUrl: `${siteUrl}/betaald.html?bestelnummer=${encodeURIComponent(bestelnummer)}`,
     metadata: {
       bestelnummer: bestelnummer,

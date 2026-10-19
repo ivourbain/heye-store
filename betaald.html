@@ -8,14 +8,14 @@
   <title>Bedankt voor je bestelling — Heye Store</title>
   <style>
     :root{--oranje:#c95000;--oranje-donker:#a84200;
-      --oranje-licht:#fff4ed;--inkt:#1a1a1a;--grijs:#6d6469;
+      --oranje-licht:#fff4ed;--accent-zacht:#ffb27a;--rand-accent:#ffd9c2;--inkt:#1a1a1a;--grijs:#6d6469;
       --lijn:#eae5e0;--achtergrond:#faf8f6;--wit:#fff}
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(--inkt);
       background:var(--achtergrond);line-height:1.6;min-height:100vh;display:flex;flex-direction:column}
     .infobalk{background:var(--inkt);color:#fff;font-size:13.5px;text-align:center;
       padding:9px 16px;letter-spacing:.2px}
-    .infobalk strong{color:#ffb27a;font-weight:700}
+    .infobalk strong{color:var(--accent-zacht);font-weight:700}
     .infobalk .scheiding{opacity:.45;margin:0 10px}
     @media (max-width:700px){
       .infobalk{font-size:12.5px;padding:8px 12px}
@@ -76,6 +76,10 @@
       @page{margin:18mm}
     }
   </style>
+  <!-- Instellingen (gegevens, teksten, kleur) zo vroeg mogelijk laden, zodat de
+       pagina meteen in de juiste kleur verschijnt. vul-in.js vult daarna de teksten in. -->
+  <script src="instellingen.js"></script>
+  <script src="vul-in.js"></script>
 </head>
 <body>
   <div class="infobalk">
@@ -122,6 +126,12 @@
     const params = new URLSearchParams(window.location.search);
     const bestelnummer = params.get("bestelnummer");
 
+    // Tekst veilig in HTML zetten: < > & " worden letterlijk getoond.
+    function veilig(t){
+      return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
     function euro(n){ return "€ " + Number(n).toFixed(2).replace(".", ","); }
 
     // De bestelbon die index.html vlak vóór de doorverwijzing naar Mollie bewaarde.
@@ -133,20 +143,20 @@
 
     function bonHTML(bon){
       const rijen = bon.regels.map(r =>
-        `<tr><td>${r.aantal}&times;</td><td>${r.naam}</td>` +
+        `<tr><td>${r.aantal}&times;</td><td>${veilig(r.naam)}</td>` +
         `<td class="bon-bedrag">${euro(r.stuk)}</td>` +
         `<td class="bon-bedrag">${euro(r.stuk * r.aantal)}</td></tr>`).join("");
 
       const betaalblok = bon.betaalwijze === "online"
         ? `<p class="bon-betaal">Betaald via Bancontact of kaart.</p>`
         : `<p class="bon-betaal">Schrijf <strong>${euro(bon.totaal)}</strong> over op
-             <strong>${bon.iban}</strong> (${bon.winkel}) met mededeling
-             <strong>${bon.nummer}</strong>.</p>`;
+             <strong>${veilig(bon.iban)}</strong> (${veilig(bon.winkel)}) met mededeling
+             <strong>${veilig(bon.nummer)}</strong>.</p>`;
 
       return `
         <div class="bon-kop">
           <div class="bon-titel">Bestelbevestiging</div>
-          <div class="bon-nr">${bon.nummer}<br><span>${bon.datum}</span></div>
+          <div class="bon-nr">${veilig(bon.nummer)}<br><span>${bon.datum}</span></div>
         </div>
         <table class="bon-tabel">
           <thead><tr><th></th><th>Product</th><th class="bon-bedrag">Per stuk</th><th class="bon-bedrag">Totaal</th></tr></thead>
@@ -159,7 +169,7 @@
         </table>
         ${betaalblok}
         <div class="bon-adres"><strong>Leveradres</strong><br>
-          ${bon.klant.naam}<br>${bon.klant.adres}<br>${bon.klant.postcode} ${bon.klant.gemeente}</div>`;
+          ${veilig(bon.klant.naam)}<br>${veilig(bon.klant.adres)}<br>${veilig(bon.klant.postcode)} ${veilig(bon.klant.gemeente)}</div>`;
     }
 
     // Bon tonen als we er een hebben. Is er geen (bv. andere browser of

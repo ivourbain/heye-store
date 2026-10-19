@@ -8,14 +8,14 @@
   <title>Algemene voorwaarden — Heye Store</title>
   <style>
     :root{--oranje:#c95000;--oranje-donker:#a84200;
-      --oranje-licht:#fff4ed;--inkt:#1a1a1a;--grijs:#6d6469;
+      --oranje-licht:#fff4ed;--accent-zacht:#ffb27a;--rand-accent:#ffd9c2;--inkt:#1a1a1a;--grijs:#6d6469;
       --lijn:#eae5e0;--achtergrond:#faf8f6;--wit:#fff}
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(--inkt);
       background:var(--achtergrond);line-height:1.65}
     .infobalk{background:var(--inkt);color:#fff;font-size:13.5px;text-align:center;
       padding:9px 16px;letter-spacing:.2px}
-    .infobalk strong{color:#ffb27a;font-weight:700}
+    .infobalk strong{color:var(--accent-zacht);font-weight:700}
     .infobalk .scheiding{opacity:.45;margin:0 10px}
     @media (max-width:700px){
       .infobalk{font-size:12.5px;padding:8px 12px}
@@ -33,7 +33,7 @@
     p,li{font-size:15px;margin-bottom:10px}
     ul{margin:0 0 10px 22px}
     a{color:var(--oranje-donker)}
-    .nota{background:var(--oranje-licht);border:1px solid #ffd9c2;border-left:4px solid var(--oranje);
+    .nota{background:var(--oranje-licht);border:1px solid var(--rand-accent);border-left:4px solid var(--oranje);
       border-radius:10px;padding:14px 18px;margin-bottom:26px;font-size:14px;color:var(--inkt)}
     .invul{background:#fff3cd;border-radius:4px;padding:1px 6px;font-weight:600;font-size:13px}
     .gegevens{background:var(--wit);border:1px solid var(--lijn);border-radius:12px;padding:16px 20px;margin:14px 0}
@@ -44,6 +44,10 @@
     .voet a{color:var(--grijs);text-decoration:none;margin-right:14px}
     .voet a:hover{color:var(--oranje-donker)}
   </style>
+  <!-- Instellingen (gegevens, teksten, kleur) zo vroeg mogelijk laden, zodat de
+       pagina meteen in de juiste kleur verschijnt. vul-in.js vult daarna de teksten in. -->
+  <script src="instellingen.js"></script>
+  <script src="vul-in.js"></script>
 </head>
 <body>
   <div class="infobalk">
@@ -68,10 +72,10 @@
     <h2>1. Wie zijn wij?</h2>
     <p>Deze webshop wordt beheerd door:</p>
     <div class="gegevens">
-      <p><strong>CR.Service - Heye Store</strong></p>
-      <p>Winkelstraat 69/1, 2890 Sint-Amands, België</p>
-      <p>Ondernemingsnummer: 0449.281.828 — btw: BE 0449.281.828</p>
-      <p>E-mail: ivo.urbain@gmail.com</p>
+      <p><strong data-i="bedrijfsnaam">CR.Service - Heye Store</strong></p>
+      <p data-i="adresLand">Winkelstraat 69/1, 2890 Sint-Amands, België</p>
+      <p>Ondernemingsnummer: <span data-i="ondernemingsnummer">0449.281.828</span> — btw: <span data-i="btw">BE 0449.281.828</span></p>
+      <p>E-mail: <span data-i="email">ivo.urbain@gmail.com</span></p>
     </div>
     <p>Hierna "de verkoper" of "wij". De klant die een bestelling plaatst, wordt "de klant" of "je" genoemd.</p>
 
@@ -99,8 +103,8 @@
        verzonden nadat we je betaling hebben ontvangen.</p>
 
     <h2>6. Levering</h2>
-    <p>Wij leveren binnen <strong>2 tot 5 werkdagen</strong> na ontvangst
-       van je betaling. Verzendkosten: <strong>€4,95 per bestelling, en gratis vanaf €40</strong>.
+    <p>Wij leveren binnen <strong><span data-i="leveringTot">2 tot 5</span> werkdagen</strong> na ontvangst
+       van je betaling. Verzendkosten: <strong><span data-i="verzendkost">€4,95</span> per bestelling, en gratis vanaf <span data-i="gratisVanaf">€40</span></strong>.
        Opgegeven leveringstermijnen zijn indicatief. Wordt een product onverwacht sterk vertraagd, dan brengen we
        je op de hoogte en kun je je bestelling kosteloos annuleren.</p>
 
@@ -127,7 +131,7 @@
     <div>
       <a href="index.html">Winkel</a><a href="voorwaarden.html">Voorwaarden</a><a href="privacy.html">Privacy</a><a href="retour.html">Retour</a>
     </div>
-    <div>CR.Service - Heye Store · Ondernemingsnr. 0449.281.828</div>
+    <div><span data-i="bedrijfsnaam">CR.Service - Heye Store</span> · Ondernemingsnr. <span data-i="ondernemingsnummer">0449.281.828</span></div>
   </div></footer>
 </body>
 </html>

@@ -59,10 +59,17 @@
          --oranje         de werkkleur: knopvlakken en actieve knopjes
          --oranje-donker  tekst op wit (prijzen, koppen) en de hover van knoppen
          --oranje-licht   zachte achtergrond voor de banner en tips             */
+    /* De namen zeggen "oranje", maar het is de HUISKLEUR: in instellingen.js kies je
+       met "thema" een ander kleurenschema (bv. blauw voor de testwinkel). vul-in.js
+       vervangt dan deze waarden. Staat er "oranje", dan blijven ze exact zoals hier. */
     :root{
       --oranje:#c95000;        /* werkkleur — dieper dan het logo-oranje */
       --oranje-donker:#a84200; /* tekst op wit + hover van gevulde knoppen */
       --oranje-licht:#fff4ed;  /* zachte achtergrond */
+      --accent-zacht:#ffb27a;  /* vette tekst in de zwarte infobalk */
+      --rand-accent:#ffd9c2;   /* randje rond de gsm-tip */
+      --hero-1:#fff1e6; --hero-2:#ffe3cd; --hero-3:#ffd4b3;  /* verloop van de banner */
+      --hero-tekst:#6b4b54;    /* tekst in de banner */
       --inkt:#1a1a1a;          /* tekstkleur — het zwart van het logo */
       --grijs:#6e6a66;
       --lijn:#eae5e0;
@@ -83,7 +90,7 @@
        het is een eerste indruk, geen knop die je altijd nodig hebt. */
     .infobalk{background:var(--inkt);color:#fff;font-size:13.5px;text-align:center;
       padding:9px 16px;letter-spacing:.2px}
-    .infobalk strong{color:#ffb27a;font-weight:700}
+    .infobalk strong{color:var(--accent-zacht);font-weight:700}
     .infobalk .scheiding{opacity:.45;margin:0 10px}
     .infobalk .weg-op-gsm{display:inline}
 
@@ -105,18 +112,18 @@
     .mandknop{
       position:relative;border:none;cursor:pointer;background:var(--oranje);color:#fff;
       padding:11px 20px;border-radius:30px;font-size:15px;font-weight:600}
-    .mandknop:hover{background:#a84200}
+    .mandknop:hover{background:var(--oranje-donker)}
     .badge{
       position:absolute;top:-7px;right:-7px;background:var(--inkt);color:#fff;
       min-width:22px;height:22px;border-radius:11px;font-size:12px;font-weight:700;
       display:flex;align-items:center;justify-content:center;padding:0 5px}
 
     /* ---- Welkomstbanner ---- */
-    .hero{background:linear-gradient(135deg,#fff1e6 0%,#ffe3cd 55%,#ffd4b3 100%);
+    .hero{background:linear-gradient(135deg,var(--hero-1) 0%,var(--hero-2) 55%,var(--hero-3) 100%);
       border-bottom:1px solid var(--lijn)}
     .hero-inner{max-width:1150px;margin:0 auto;padding:40px 20px 44px;text-align:center}
     .hero h1{font-size:30px;color:var(--oranje-donker);margin-bottom:10px;line-height:1.2;text-wrap:balance}
-    .hero p{max-width:640px;margin:0 auto;color:#6b4b54;font-size:16px;line-height:1.55}
+    .hero p{max-width:640px;margin:0 auto;color:var(--hero-tekst);font-size:16px;line-height:1.55}
 
     /* ---- Afdelingen (Melissa / Montana / Diverse) ---- */
     /* De afdelingsbalk is een niveau hoger dan de categoriebalk: eerst kies je
@@ -210,7 +217,7 @@
     .btw{font-size:12px;color:var(--grijs);margin-bottom:14px}
     .afreken{width:100%;background:var(--oranje);color:#fff;border:none;padding:14px;
       border-radius:12px;font-size:16px;font-weight:600;cursor:pointer}
-    .afreken:hover{background:#a84200}
+    .afreken:hover{background:var(--oranje-donker)}
     .afreken:disabled{background:var(--lijn);color:var(--grijs);cursor:not-allowed}
     .mand-leeg{text-align:center;color:var(--grijs);padding:50px 10px}
 
@@ -237,7 +244,7 @@
       padding:4px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
     .kopieer:hover{background:var(--oranje);color:#fff}
     .kopieer.ok{background:#2e7d4f;border-color:#2e7d4f;color:#fff}
-    .gsm-tip{font-size:13px;color:var(--inkt);background:var(--oranje-licht);border:1px solid #ffd9c2;
+    .gsm-tip{font-size:13px;color:var(--inkt);background:var(--oranje-licht);border:1px solid var(--rand-accent);
       border-radius:10px;padding:10px 14px;margin-bottom:14px;line-height:1.5;text-align:left}
     .betaal-tip{font-size:12.5px;color:var(--grijs);margin-bottom:16px;line-height:1.5}
     .bedankt{width:64px;height:64px;border-radius:50%;background:var(--oranje);color:#fff;
@@ -377,6 +384,10 @@
     }
 
   </style>
+  <!-- Instellingen (gegevens, teksten, kleur) zo vroeg mogelijk laden, zodat de
+       pagina meteen in de juiste kleur verschijnt. vul-in.js vult daarna de teksten in. -->
+  <script src="instellingen.js"></script>
+  <script src="vul-in.js"></script>
 </head>
 
 <body>
@@ -389,7 +400,7 @@
     <div class="balk">
       <div class="logo" id="logo">
         <img src="logo.png" alt="Heye Store" width="218" height="120">
-        <span id="logo-onder">haar- &amp; verzorgingsaccessoires</span>
+        <span id="logo-onder">haaraccessoires &amp; brillen</span>
       </div>
       <div class="zoek">
         <input id="zoekveld" type="search" placeholder="Zoek een product… (bv. haarclip, leesbril, kam)">
@@ -403,9 +414,8 @@
   <!-- Welkomstbanner -->
   <section class="hero">
     <div class="hero-inner">
-      <h1 id="hero-titel">Mooie haar- &amp; verzorgingsaccessoires</h1>
-      <p id="hero-tekst">Ontdek de collectie van Melissa — haarclips, kammen, borstels, kwasten en meer.
-         Zorgvuldig gekozen, eerlijk geprijsd en rechtstreeks bij jou thuis geleverd.</p>
+      <h1 id="hero-titel">Welkom bij Heye Store</h1>
+      <p id="hero-tekst">Zorgvuldig gekozen accessoires, eerlijk geprijsd en rechtstreeks bij jou thuis geleverd.</p>
     </div>
   </section>
 
@@ -434,7 +444,7 @@
       <a href="privacy.html">Privacybeleid</a>
       <a href="retour.html">Retour &amp; herroeping</a>
     </div>
-    <div>© Heye Store — CR.Service · Winkelstraat 69/1, 2890 Sint-Amands</div>
+    <div>© <span data-i="toonnaam">Heye Store</span> — CR.Service · <span data-i="adres">Winkelstraat 69/1, 2890 Sint-Amands</span></div>
   </div></footer>
 
   <!-- Het winkelmandje -->
@@ -534,31 +544,40 @@
     </div>
   </div>
 
-  <!-- De QR-generator en de productlijst inladen -->
+  <!-- De QR-generator en de productlijst (instellingen.js en vul-in.js staan in de <head>) -->
   <script src="qrcode.js"></script>
   <script src="products.js"></script>
 
   <script>
     /* ============================================================
-       ⚙️  JOUW REKENINGGEGEVENS — pas deze 3 regels aan!
-       Hier komt jouw echte IBAN en de naam zoals die op je
-       rekening staat. Zolang hier het TESTnummer staat, werkt de
-       QR wel, maar gaat het geld nergens heen. Zet er jouw eigen
-       IBAN in zodra je klaar bent.
+       ⚙️  INSTELLINGEN
+       Winkelgegevens, rekening, verzendkosten, afdelingen en teksten
+       staan NIET meer hier, maar in instellingen.js. Hieronder worden
+       ze enkel overgenomen onder de namen die de rest van deze code
+       al gebruikte — zo hoefde de werking zelf niet te veranderen.
        ============================================================ */
+    if (typeof INSTELLINGEN === "undefined") {
+      // Zonder instellingen kan de winkel niet rekenen. Liever een duidelijke
+      // melding dan een winkel die half werkt met verkeerde bedragen.
+      document.body.insertAdjacentHTML("afterbegin",
+        '<div style="background:#b3261e;color:#fff;padding:14px;text-align:center;font-weight:600">'
+        + 'De winkel is even niet beschikbaar (instellingen.js ontbreekt).</div>');
+      throw new Error("instellingen.js ontbreekt");
+    }
+    const I = INSTELLINGEN;
+
     const WINKEL = {
-      naam: "CR.Service - Heye Store",     // naam zoals op je bankrekening
-      toonnaam: "Heye Store",              // hoe de winkel heet voor de klant
-      slogan: "haaraccessoires & brillen",  // regeltje onder het logo
-      code: "HS",                          // begin van elk bestelnummer: HS-260830-0473
-      iban: "BE84731068044259",            // jouw eigen IBAN
-      bic:  ""                             // mag leeg blijven
+      naam:     I.betaling.rekeninghouder,   // naam zoals op de bankrekening (QR)
+      toonnaam: I.winkel.toonnaam,           // hoe de winkel heet voor de klant
+      slogan:   I.winkel.slogan,             // regeltje onder het logo
+      code:     I.winkel.bestelcode,         // begin van elk bestelnummer: HS-260830-0473
+      iban:     I.betaling.iban,
+      bic:      I.betaling.bic || ""
     };
 
-    // ⚙️ VERZENDKOSTEN — pas gerust aan wanneer je wil
     const VERZENDING = {
-      kosten: 4.95,        // verzendkosten per bestelling
-      gratisVanaf: 40      // gratis verzending vanaf dit bedrag (subtotaal)
+      kosten:      Number(I.verzending.kosten),
+      gratisVanaf: Number(I.verzending.gratisVanaf)
     };
     // Berekent de verzendkost voor een bepaald subtotaal
     function verzendkostVoor(subtotaal){
@@ -631,59 +650,29 @@
       }
     }
 
-    // De afdelingen van de winkel. De sleutel links (melissa, montana, diverse)
-    // staat in products.js bij elk product. Alles wat de klant leest, staat hier.
-    //
+    // De afdelingen van de winkel (uit instellingen.js). De sleutel (melissa,
+    // montana, diverse) staat in products.js bij elk product.
     //   naam  = op de afdelingsknop
     //   merk  = het woord dat vooraan in de productnaam staat en dat we in de
     //           winkel weglaten ("Melissa Haarkam 21 cm" wordt "Haarkam 21 cm")
     //   titel + tekst = de welkomstbanner wanneer deze afdeling gekozen is
-    const AFDELINGEN = {
-      melissa: {
-        naam: "Melissa Haarmode",
-        merk: "Melissa",
-        titel: "Mooie haar- &amp; verzorgingsaccessoires",
-        tekst: "Ontdek de collectie van Melissa — haarclips, kammen, borstels, kwasten en meer. "
-             + "Zorgvuldig gekozen, eerlijk geprijsd en rechtstreeks bij jou thuis geleverd.",
-        variantLabel: "Uitvoering"
-      },
-      montana: {
-        naam: "Montana Brillen",
-        merk: "Montana",
-        titel: "Brillen van Montana",
-        tekst: "Leesbrillen, computerbrillen met blauwlichtfilter en neckreaders. "
-             + "Duidelijke sterktes, eerlijke prijzen, rechtstreeks bij jou thuis geleverd.",
-        // Staat boven het keuzelijstje bij producten met varianten. Zonder dit
-        // zou de klant enkel "+1,00" zien en niet weten waar hij uit kiest.
-        variantLabel: "Sterkte"
-      },
-      diverse: {
-        naam: "Diverse",
-        merk: "",
-        titel: "Nog meer moois",
-        tekst: "Een selectie die niet in de andere afdelingen past, maar wel de moeite waard is.",
-        variantLabel: "Uitvoering"
-      }
-    };
+    //   variantLabel  = het woord boven het keuzelijstje (bv. "Sterkte")
+    const AFDELINGEN = I.afdelingen || {};
 
     // De volgorde waarin de afdelingen verschijnen: in de knoppenbalk én op de pakbon.
-    const AFDELING_VOLGORDE = ["melissa", "montana", "diverse"];
+    const AFDELING_VOLGORDE = I.afdelingVolgorde || Object.keys(AFDELINGEN);
 
     // De welkomsttekst wanneer de klant "Alles" bekijkt of er nog maar één afdeling is.
-    const WELKOM_ALGEMEEN = {
-      titel: "Welkom bij Heye Store",
-      tekst: "Zorgvuldig gekozen accessoires, eerlijk geprijsd en rechtstreeks bij jou thuis geleverd."
-    };
+    const WELKOM_ALGEMEEN = I.welkom;
 
     // Welke afdeling en categorie zijn actief, en wat typte de klant in de zoekbalk
     let actieveAfdeling = "alles";
     let actieveCategorie = "Alles";
     let huidigeZoekterm = "";
 
-    // Volgorde waarin de categorieknopjes verschijnen. Staat een categorie hier niet in
+    // Volgorde waarin de categorieknopjes verschijnen (uit instellingen.js). Staat een categorie daar niet in
     // (bv. later "Zonnebrillen"), dan komt ze gewoon achteraan — geen fout, geen aanpassing nodig.
-    const CAT_VOLGORDE = ["Haarclips","Haarborstels","Haarkammen","Haarelastieken",
-                          "Haarbanden","Make-up","Pincetten","Nagelverzorging","Sponzen","Accessoires"];
+    const CAT_VOLGORDE = I.categorieVolgorde || [];
 
     // Heeft een product nog geen afdeling? Dan hoort het bij Melissa.
     // Zo blijft de huidige productlijst gewoon werken zolang het veld er nog niet in staat.
@@ -768,9 +757,11 @@
     function zetHero(){
       const a = (actieveAfdeling !== "alles" && AFDELINGEN[actieveAfdeling])
         ? AFDELINGEN[actieveAfdeling] : WELKOM_ALGEMEEN;
-      document.getElementById("hero-titel").innerHTML = a.titel;
-      document.getElementById("hero-tekst").innerHTML = a.tekst;
-      document.getElementById("logo-onder").innerHTML = WINKEL.slogan;
+      // textContent i.p.v. innerHTML: de teksten komen uit instellingen.js en
+      // worden letterlijk getoond, dus een "&" of "<" breekt de pagina nooit.
+      document.getElementById("hero-titel").textContent = a.titel;
+      document.getElementById("hero-tekst").textContent = a.tekst;
+      document.getElementById("logo-onder").textContent = WINKEL.slogan;
     }
 
     // De producten van de gekozen afdeling. Dit is de basis voor zowel
@@ -893,13 +884,34 @@
       document.getElementById("filterknop-tekst").textContent = actieveCategorie;
     }
 
+    /* ---- Zoeken ----------------------------------------------------------
+       We zoeken niet alleen in de naam, maar ook in de categorie, de variant
+       (bv. de sterkte "+2,00") en de naam van de afdeling. Zo vindt "leesbril"
+       alle leesbrillen, ook al staat dat woord niet in hun naam, en vindt
+       "haarclip" de categorie Haarclips.
+       Hoofdletters en accenten tellen niet mee ("creme" vindt ook "crème"),
+       en bij meerdere woorden moet elk woord ergens voorkomen:
+       "leesbril 2,00" geeft alle leesbrillen in sterkte +2,00. */
+    function zonderAccenten(t){
+      return String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+    function zoektekstVan(p){
+      return zonderAccenten([p.naam, p.categorie, p.variant,
+        (AFDELINGEN[afdelingVan(p)] || {}).naam].join(" "));
+    }
+    function pastBijZoekterm(p, woorden){
+      if (!woorden.length) return true;
+      const hooi = zoektekstVan(p);
+      return woorden.every(w => hooi.includes(w));
+    }
+
     // Teken de productkaarten, gefilterd op categorie én zoekterm
     function toonProducten(){
       const rooster = document.getElementById("rooster");
-      const term = huidigeZoekterm.trim().toLowerCase();
+      const woorden = zonderAccenten(huidigeZoekterm).split(/\s+/).filter(Boolean);
       const lijst = productenInAfdeling().filter(p =>
         (actieveCategorie === "Alles" || p.categorie === actieveCategorie) &&
-        p.naam.toLowerCase().includes(term)
+        pastBijZoekterm(p, woorden)
       );
 
       rooster.innerHTML = "";                       // maak eerst leeg
@@ -914,7 +926,7 @@
           kaart.innerHTML = `
             <div class="foto"><img src="${p.foto}" alt="${veiligeTekst(p.naam)}" loading="lazy"></div>
             <div class="inhoud">
-              <div class="naam">${toonNaam(p)}</div>
+              <div class="naam">${veiligeTekst(toonNaam(p))}</div>
               <div class="prijs">${euro(p.prijs_incl_btw)}</div>
               <button data-id="${p.id}">In mandje</button>
             </div>`;
@@ -935,7 +947,7 @@
           kaart.innerHTML = `
             <div class="foto"><img src="${eerste.foto}" alt="${veiligeTekst(groepsNaam(eerste))}" loading="lazy"></div>
             <div class="inhoud">
-              <div class="naam">${groepsNaam(eerste)}</div>
+              <div class="naam">${veiligeTekst(groepsNaam(eerste))}</div>
               <div class="prijs">${prijsTekst}</div>
               <label class="variantregel">
                 <span>${veiligeTekst(label)}</span>
@@ -995,7 +1007,7 @@
           regel.innerHTML = `
             <img src="${p.foto}" alt="">
             <div style="flex:1">
-              <div class="r-naam">${toonNaam(p)}</div>
+              <div class="r-naam">${veiligeTekst(toonNaam(p))}</div>
               <div class="r-prijs">${euro(p.prijs_incl_btw)} per stuk</div>
               <div class="aantal">
                 <button onclick="wijzig('${id}',-1)">−</button>
@@ -1207,20 +1219,20 @@
     // De bon als HTML. Wordt twee keer gebruikt: op het scherm en op papier.
     function bonHTML(bon){
       const rijen = bon.regels.map(r =>
-        `<tr><td>${r.aantal}&times;</td><td>${r.naam}</td>` +
+        `<tr><td>${r.aantal}&times;</td><td>${veiligeTekst(r.naam)}</td>` +
         `<td class="bon-bedrag">${euro(r.stuk)}</td>` +
         `<td class="bon-bedrag">${euro(r.stuk * r.aantal)}</td></tr>`).join("");
 
       const betaalblok = bon.betaalwijze === "online"
         ? `<p class="bon-betaal">Betaald via Bancontact of kaart.</p>`
         : `<p class="bon-betaal">Schrijf <strong>${euro(bon.totaal)}</strong> over op
-             <strong>${bon.iban}</strong> (${bon.winkel}) met mededeling
-             <strong>${bon.nummer}</strong>.</p>`;
+             <strong>${veiligeTekst(bon.iban)}</strong> (${veiligeTekst(bon.winkel)}) met mededeling
+             <strong>${veiligeTekst(bon.nummer)}</strong>.</p>`;
 
       return `
         <div class="bon-kop">
           <div class="bon-titel">Bestelbevestiging</div>
-          <div class="bon-nr">${bon.nummer}<br><span>${bon.datum}</span></div>
+          <div class="bon-nr">${veiligeTekst(bon.nummer)}<br><span>${bon.datum}</span></div>
         </div>
         <table class="bon-tabel">
           <thead><tr><th></th><th>Product</th><th class="bon-bedrag">Per stuk</th><th class="bon-bedrag">Totaal</th></tr></thead>
@@ -1233,7 +1245,7 @@
         </table>
         ${betaalblok}
         <div class="bon-adres"><strong>Leveradres</strong><br>
-          ${bon.klant.naam}<br>${bon.klant.adres}<br>${bon.klant.postcode} ${bon.klant.gemeente}</div>`;
+          ${veiligeTekst(bon.klant.naam)}<br>${veiligeTekst(bon.klant.adres)}<br>${veiligeTekst(bon.klant.postcode)} ${veiligeTekst(bon.klant.gemeente)}</div>`;
     }
 
     // Bon tonen op het bedankscherm én klaarzetten om af te drukken.

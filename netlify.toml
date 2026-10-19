@@ -13,3 +13,10 @@
   # zelf opzoeken en weigert elke online betaling ("Productlijst niet
   # leesbaar" of "Instellingen niet leesbaar op de server").
   included_files = ["products.js", "instellingen.js"]
+
+# Kortingscodes zijn geen echt geheim zoals een API-sleutel: de klant krijgt
+# de code gewoon in een mail. Netlify's geheimenscan mag KORTINGSCODES dus
+# overslaan; anders blokkeert hij de deploy zodra een code toevallig als
+# woord in een bestand voorkomt (bv. "HEYE" of "WELKOM").
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "KORTINGSCODES"

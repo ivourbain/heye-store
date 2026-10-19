@@ -7,7 +7,7 @@
 //  meteen te tonen wat de korting wordt. Het ECHTE bedrag rekent
 //  create-payment.js bij het betalen nog eens zelf uit.
 //
-//  Vraag:    POST { "code": "WELKOM15" }
+//  Vraag:    POST { "code": "VOORBEELD" }
 //  Antwoord: { geldig: true,  code, percentage, minimum }
 //         of { geldig: false, reden }
 // ============================================================

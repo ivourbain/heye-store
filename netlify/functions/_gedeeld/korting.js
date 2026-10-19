@@ -12,9 +12,9 @@
 //  Niet in de website (dan kan iedereen ze lezen), maar in Netlify:
 //     Project configuration -> Environment variables -> KORTINGSCODES
 //  Meerdere codes scheiden met een komma. Bijvoorbeeld:
-//     WELKOM15,FLYER20=20
-//  "WELKOM15"  = percentage uit instellingen.js (korting.percentage)
-//  "FLYER20=20" = deze code geeft 20%, los van instellingen.js
+//     ACTIECODE,FLYERCODE=20
+//  "ACTIECODE"  = percentage uit instellingen.js (korting.percentage)
+//  "FLYERCODE=20" = deze code geeft 20%, los van instellingen.js
 //  Hoofd- of kleine letters maakt niet uit.
 //
 //  (Stap 2 voegt hier straks de unieke welkomstcodes aan toe.)
@@ -32,7 +32,7 @@ function kortingInstellingen(instellingen) {
   };
 }
 
-// " welkom15 " -> "WELKOM15". Enkel letters, cijfers en een streepje.
+// " actiecode " -> "ACTIECODE". Enkel letters, cijfers en een streepje.
 function netteCode(code) {
   return String(code || "").toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 40);
 }

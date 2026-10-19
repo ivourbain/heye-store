@@ -24,6 +24,11 @@
 //                vervoerder (bv. "bpost") en leverland (bv. "België"). Staat er
 //                "België", dan aanvaardt het bestelformulier enkel een Belgische
 //                postcode (4 cijfers).
+//    korting     kortingscodes: actief (true/false), percentage (bv. 15) en
+//                minimum (bestelbedrag aan producten vanaf wanneer de code
+//                werkt, 0 = geen minimum). De codes zelf staan NIET hier
+//                (dit bestand kan iedereen lezen) maar geheim in Netlify:
+//                Environment variables -> KORTINGSCODES
 //    infobalk    het zwarte balkje bovenaan elke pagina. Je mag deze
 //                invulwoorden gebruiken, ze worden vanzelf ingevuld:
 //                  gratisVanaf, verzendkost, levering, vervoerder, leverland
@@ -66,6 +71,11 @@ const INSTELLINGEN = {
     "leveringMax": 5,
     "vervoerder": "bpost",
     "leverland": "België"
+  },
+  "korting": {
+    "actief": true,
+    "percentage": 15,
+    "minimum": 25
   },
   "infobalk": {
     "vet": "Gratis verzending vanaf {gratisVanaf}",

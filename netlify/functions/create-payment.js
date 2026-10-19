@@ -17,6 +17,8 @@
 
 const fs = require("fs");
 const path = require("path");
+// Kortingscodes: welke geldig zijn en hoe de korting berekend wordt
+const { zoekCode, kortingBedrag } = require("./_gedeeld/korting");
 
 // ⚙️ VERZENDKOSTEN staan niet meer hier, maar in instellingen.js — hetzelfde
 //    bestand dat de webshop gebruikt. Zo kunnen browser en server nooit meer
@@ -194,8 +196,28 @@ exports.handler = async (event) => {
   }
 
   subtotaal = centen(subtotaal);
-  const verzending = (subtotaal <= 0 || subtotaal >= VERZENDING.gratisVanaf) ? 0 : VERZENDING.kosten;
-  const bedrag = centen(subtotaal + verzending);
+
+  // ---- Kortingscode (optioneel) ----
+  // De browser stuurt enkel de CODE mee, nooit het kortingsbedrag. We kijken
+  // hier zelf of de code bestaat en rekenen de korting zelf uit.
+  let korting = 0;
+  let kortingInfo = null;
+  if (data.kortingscode) {
+    kortingInfo = zoekCode(data.kortingscode, instellingen);
+    if (!kortingInfo.geldig) {
+      return { statusCode: 400, body: JSON.stringify({ error: `Kortingscode: ${kortingInfo.reden}` }) };
+    }
+    korting = kortingBedrag(subtotaal, kortingInfo);
+    if (korting <= 0) {
+      return { statusCode: 400, body: JSON.stringify({
+        error: `Kortingscode geldt pas vanaf €${kortingInfo.minimum.toFixed(2).replace(".", ",")}` }) };
+    }
+  }
+
+  // Verzending hangt af van wat de klant NA korting voor producten betaalt
+  const naKorting  = centen(subtotaal - korting);
+  const verzending = (naKorting <= 0 || naKorting >= VERZENDING.gratisVanaf) ? 0 : VERZENDING.kosten;
+  const bedrag = centen(naKorting + verzending);
 
   if (!(bedrag > 0)) {
     return { statusCode: 400, body: JSON.stringify({ error: "Berekend bedrag is nul" }) };
@@ -232,7 +254,10 @@ exports.handler = async (event) => {
       email: email,
       stuks: aantalStuks,
       subtotaal: subtotaal.toFixed(2),
-      verzending: verzending.toFixed(2)
+      verzending: verzending.toFixed(2),
+      // Leeg als er geen kortingscode gebruikt werd
+      kortingscode: kortingInfo ? kortingInfo.code : "",
+      korting: korting ? `${kortingInfo.percentage}% = ${korting.toFixed(2)}` : ""
     }
     // 'method' laten we open -> Mollie toont de klant zijn betaalmethodes
     // (Bancontact, kaart, ...). Zet je dit op "bancontact", dan gaat het meteen daarheen.

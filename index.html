@@ -215,6 +215,20 @@
       padding:6px 10px;margin:6px 0 8px;text-align:center}
     .totaalregel{display:flex;justify-content:space-between;font-size:19px;font-weight:700;margin-bottom:4px;margin-top:6px}
     .btw{font-size:12px;color:var(--grijs);margin-bottom:14px}
+    /* ---- Kortingscode in het mandje ---- */
+    .kortingsvak{margin-bottom:10px}
+    .korting-link{font-size:13px;color:var(--oranje-donker);text-decoration:underline;cursor:pointer}
+    .korting-invoer{display:flex;gap:8px}
+    .korting-invoer input{flex:1;min-width:0;padding:9px 11px;border:1px solid var(--lijn);border-radius:9px;
+      font-size:14px;text-transform:uppercase;font-family:inherit}
+    .korting-invoer input:focus{outline:none;border-color:var(--oranje)}
+    .korting-invoer button{border:none;background:var(--oranje);color:#fff;border-radius:9px;padding:0 14px;
+      font-size:14px;font-weight:600;cursor:pointer}
+    .korting-invoer button:disabled{opacity:.6;cursor:default}
+    .korting-melding{font-size:12.5px;margin-top:6px;color:#b3261e}
+    .korting-melding.ok{color:#1c6b3a}
+    .korting-melding .korting-weg{color:var(--grijs);margin-left:6px;text-decoration:underline;cursor:pointer}
+    .regelrij.korting-rij{color:#1c6b3a;font-weight:600}
     .afreken{width:100%;background:var(--oranje);color:#fff;border:none;padding:14px;
       border-radius:12px;font-size:16px;font-weight:600;cursor:pointer}
     .afreken:hover{background:var(--oranje-donker)}
@@ -462,7 +476,17 @@
     </div>
     <div class="items" id="mand-items"></div>
     <div class="voet">
+      <!-- Kortingscode. De codes zelf staan geheim op de server (KORTINGSCODES in Netlify). -->
+      <div class="kortingsvak" id="kortingsvak">
+        <a href="#" id="korting-open" class="korting-link">Heb je een kortingscode?</a>
+        <div id="korting-invoer" class="korting-invoer" style="display:none">
+          <input id="korting-code" placeholder="Kortingscode" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40">
+          <button type="button" id="korting-toepas">Toepassen</button>
+        </div>
+        <p id="korting-melding" class="korting-melding" style="display:none"></p>
+      </div>
       <div class="regelrij"><span>Subtotaal</span><span id="subtotaal">€0,00</span></div>
+      <div class="regelrij korting-rij" id="korting-rij" style="display:none"><span id="korting-label">Korting</span><span id="korting-bedrag"></span></div>
       <div class="regelrij"><span>Verzending met <span data-i="vervoerder">bpost</span></span><span id="verzending">—</span></div>
       <p class="gratis-tip" id="gratis-tip" style="display:none"></p>
       <div class="totaalregel"><span>Totaal</span><span id="totaal">€0,00</span></div>
@@ -599,6 +623,141 @@
     function verzendkostVoor(subtotaal){
       if (subtotaal <= 0 || subtotaal >= VERZENDING.gratisVanaf) return 0;
       return VERZENDING.kosten;
+    }
+
+    /* ---- KORTINGSCODE ---------------------------------------------------
+       De klant typt een code in het mandje. We vragen aan de server
+       (check-korting) of ze geldig is; de lijst met codes staat daar geheim.
+       Hier rekenen we de korting enkel uit om ze te TONEN. Bij online betalen
+       rekent create-payment.js alles opnieuw zelf uit: knoeien in de browser
+       verandert dus niets aan wat er afgerekend wordt.
+
+       Regels (moeten gelijk zijn aan netlify/functions/_gedeeld/korting.js):
+       - korting = percentage van de producten (subtotaal), op de cent afgerond
+       - enkel vanaf het minimumbedrag aan producten
+       - gratis verzending kijkt naar het bedrag NA korting               */
+    const KORTING_SLEUTEL = "heye_korting";
+    let kortingInfo = null;   // bv. { code:"WELKOM15", percentage:15, minimum:25 }
+
+    function centen(bedrag){ return Math.round(bedrag * 100) / 100; }
+
+    function kortingVoor(subtotaal){
+      if (!kortingInfo || subtotaal < kortingInfo.minimum) return 0;
+      return centen(subtotaal * kortingInfo.percentage / 100);
+    }
+
+    // Alle bedragen van het mandje in één keer, overal hetzelfde berekend
+    function berekening(){
+      const subtotaal = centen(subtotaalMandje());
+      const korting   = kortingVoor(subtotaal);
+      const naKorting = centen(subtotaal - korting);
+      const verzend   = verzendkostVoor(naKorting);
+      return { subtotaal, korting, naKorting, verzend, totaal: centen(naKorting + verzend) };
+    }
+
+    function bewaarKorting(){
+      try {
+        if (kortingInfo) localStorage.setItem(KORTING_SLEUTEL, JSON.stringify(kortingInfo));
+        else localStorage.removeItem(KORTING_SLEUTEL);
+      } catch(e){}
+    }
+
+    // De server vragen of een code geldig is. Geeft het antwoord terug,
+    // of null als de server niet bereikbaar was.
+    async function vraagKorting(code){
+      try {
+        const resp = await fetch("/.netlify/functions/check-korting", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code })
+        });
+        if (!resp.ok) return null;
+        return await resp.json();
+      } catch(e){ return null; }
+    }
+
+    async function pasKortingToe(){
+      const veld = document.getElementById("korting-code");
+      const knop = document.getElementById("korting-toepas");
+      const code = veld.value.trim();
+      if (!code){ veld.focus(); return; }
+      knop.disabled = true; knop.textContent = "…";
+      const antwoord = await vraagKorting(code);
+      knop.disabled = false; knop.textContent = "Toepassen";
+      if (antwoord && antwoord.geldig){
+        kortingInfo = { code: antwoord.code, percentage: Number(antwoord.percentage), minimum: Number(antwoord.minimum) || 0 };
+        veld.value = "";
+        bewaarKorting();
+        tekenMandje();
+      } else {
+        toonKortingMelding(antwoord ? antwoord.reden
+          : "We konden de code nu niet controleren. Probeer het straks opnieuw.", false);
+      }
+    }
+
+    function verwijderKorting(){
+      kortingInfo = null;
+      bewaarKorting();
+      tekenMandje();
+    }
+
+    function toonKortingMelding(tekst, ok){
+      const m = document.getElementById("korting-melding");
+      m.className = "korting-melding" + (ok ? " ok" : "");
+      m.textContent = tekst;
+      m.style.display = tekst ? "block" : "none";
+    }
+
+    // Het kortingsvakje bijwerken (wordt opgeroepen vanuit tekenMandje)
+    function tekenKorting(b){
+      const invoer = document.getElementById("korting-invoer");
+      const link   = document.getElementById("korting-open");
+      const rij    = document.getElementById("korting-rij");
+      const m      = document.getElementById("korting-melding");
+      if (!kortingInfo){
+        rij.style.display = "none";
+        // het invoervak blijft open als de klant het zelf opende
+        if (invoer.style.display === "none") link.style.display = "inline";
+        if (m.classList.contains("ok")) toonKortingMelding("", false);
+        return;
+      }
+      link.style.display = "none";
+      invoer.style.display = "none";
+      const code = veiligeTekst(kortingInfo.code);
+      if (b.korting > 0){
+        document.getElementById("korting-label").textContent = `Korting ${kortingInfo.percentage}% (${kortingInfo.code})`;
+        document.getElementById("korting-bedrag").textContent = "−" + euro(b.korting);
+        rij.style.display = "flex";
+        m.className = "korting-melding ok";
+        m.innerHTML = `✓ Kortingscode <strong>${code}</strong> toegepast`
+          + `<a href="#" class="korting-weg" data-korting-weg>verwijderen</a>`;
+      } else {
+        rij.style.display = "none";
+        m.className = "korting-melding";
+        const tekort = b.subtotaal > 0 ? ` — nog ${euro(kortingInfo.minimum - b.subtotaal)} aan producten` : "";
+        m.innerHTML = `Code <strong>${code}</strong> (${kortingInfo.percentage}%) geldt vanaf ${euro(kortingInfo.minimum)}${tekort}.`
+          + `<a href="#" class="korting-weg" data-korting-weg>verwijderen</a>`;
+      }
+      m.style.display = "block";
+    }
+
+    // Een eerder ingevulde code terugladen en stil nakijken of ze nog geldt
+    async function laadKorting(){
+      try { kortingInfo = JSON.parse(localStorage.getItem(KORTING_SLEUTEL) || "null"); } catch(e){ kortingInfo = null; }
+      if (!kortingInfo || !kortingInfo.code){ kortingInfo = null; return; }
+      const antwoord = await vraagKorting(kortingInfo.code);
+      if (antwoord && antwoord.geldig === false){
+        // code bestaat niet meer: weghalen en zeggen waarom
+        kortingInfo = null;
+        bewaarKorting();
+        tekenMandje();
+        toonKortingMelding("Je eerder ingevulde kortingscode is niet meer geldig.", false);
+      } else if (antwoord && antwoord.geldig){
+        kortingInfo = { code: antwoord.code, percentage: Number(antwoord.percentage), minimum: Number(antwoord.minimum) || 0 };
+        bewaarKorting();
+        tekenMandje();
+      }
+      // server niet bereikbaar: code laten staan, bij betalen wordt ze toch gecontroleerd
     }
 
     /* ---- De productlijst ------------------------------------------------
@@ -1036,13 +1195,14 @@
         });
       }
 
-      // subtotaal (= producten) + verzending = eindtotaal
-      const subtotaal = totaal;
-      const verzend = verzendkostVoor(subtotaal);
+      // subtotaal (= producten) − korting + verzending = eindtotaal
+      const b = berekening();
+      const subtotaal = b.subtotaal, verzend = b.verzend;
       document.getElementById("subtotaal").textContent = euro(subtotaal);
       document.getElementById("verzending").textContent =
         subtotaal === 0 ? "—" : (verzend === 0 ? "Gratis" : euro(verzend));
-      document.getElementById("totaal").textContent = euro(subtotaal + verzend);
+      document.getElementById("totaal").textContent = euro(b.totaal);
+      tekenKorting(b);
 
       // Tip over de verzendkosten. Zit de klant er nog onder, dan tonen we hoeveel
       // hij mist. Zit hij erboven, dan bevestigen we dat hij het gehaald heeft —
@@ -1051,7 +1211,7 @@
       if (subtotaal <= 0){
         tip.style.display = "none";
       } else if (verzend > 0){
-        tip.textContent = `Nog ${euro(VERZENDING.gratisVanaf - subtotaal)} tot gratis verzending!`;
+        tip.textContent = `Nog ${euro(VERZENDING.gratisVanaf - b.naKorting)} tot gratis verzending!`;
         tip.className = "gratis-tip";
         tip.style.display = "block";
       } else {
@@ -1191,23 +1351,23 @@
         blokken.push(kop + regels.map(r => r.tekst).join("\n"));
       });
 
-      const subtotaal = subtotaalMandje();
-      const verzend = verzendkostVoor(subtotaal);
+      const b = berekening();
       const aantalStuks = Object.keys(mandje).reduce((s, id) => s + mandje[id], 0);
+      const kortingTekst = b.korting > 0
+        ? ` − Korting ${kortingInfo.percentage}% (code ${kortingInfo.code}) ${euro(b.korting)}` : "";
 
       return "PLAATS  AANTAL  PRODUCT\n"
         + blokken.join("\n")
         + `\n\n${aantalStuks} stuks in ${soorten} soorten`
-        + `\nSubtotaal ${euro(subtotaal)} + Verzending ${verzend === 0 ? "gratis" : euro(verzend)}`
-        + ` = TOTAAL ${euro(subtotaal + verzend)}`;
+        + `\nSubtotaal ${euro(b.subtotaal)}${kortingTekst} + Verzending ${b.verzend === 0 ? "gratis" : euro(b.verzend)}`
+        + ` = TOTAAL ${euro(b.totaal)}`;
     }
 
     // De bestelbon voor de KLANT bewaren, zodat het bedankscherm (en na een
     // Mollie-betaling ook betaald.html) kan tonen wat er precies besteld is.
     // Staat los van het mandje: dat wordt leeggemaakt, de bon blijft.
     function bewaarBestelling(betaalwijze){
-      const subtotaal = subtotaalMandje();
-      const verzend = verzendkostVoor(subtotaal);
+      const b = berekening();
       const bon = {
         nummer: huidigeMededeling,
         datum: new Date().toLocaleDateString("nl-BE", {day:"numeric", month:"long", year:"numeric"}),
@@ -1216,9 +1376,11 @@
           const p = vind(id);
           return { aantal: mandje[id], naam: toonNaam(p), stuk: p.prijs_incl_btw };
         }),
-        subtotaal: subtotaal,
-        verzending: verzend,
-        totaal: subtotaal + verzend,
+        subtotaal: b.subtotaal,
+        korting: b.korting,
+        kortingTekst: b.korting > 0 ? `Korting ${kortingInfo.percentage}% (${kortingInfo.code})` : "",
+        verzending: b.verzend,
+        totaal: b.totaal,
         klant: {
           naam:     (document.querySelector('[name="naam"]')     || {}).value || "",
           adres:    (document.querySelector('[name="adres"]')    || {}).value || "",
@@ -1255,6 +1417,7 @@
           <tbody>${rijen}</tbody>
           <tfoot>
             <tr><td colspan="3">Subtotaal</td><td class="bon-bedrag">${euro(bon.subtotaal)}</td></tr>
+            ${bon.korting > 0 ? `<tr><td colspan="3">${veiligeTekst(bon.kortingTekst)}</td><td class="bon-bedrag">−${euro(bon.korting)}</td></tr>` : ""}
             <tr><td colspan="3">Verzending</td><td class="bon-bedrag">${bon.verzending === 0 ? "gratis" : euro(bon.verzending)}</td></tr>
             <tr class="bon-totaal"><td colspan="3">Totaal</td><td class="bon-bedrag">${euro(bon.totaal)}</td></tr>
           </tfoot>
@@ -1273,9 +1436,9 @@
 
     // STAP 0: het gegevensformulier openen
     function openBetaling(){
-      const subtotaal = subtotaalMandje();
-      if (subtotaal <= 0) return;
-      huidigTotaal = subtotaal + verzendkostVoor(subtotaal);   // producten + verzending
+      const b = berekening();
+      if (b.subtotaal <= 0) return;
+      huidigTotaal = b.totaal;   // producten − korting + verzending
 
       huidigeMededeling = maakBestelnummer();
       // verborgen velden vullen zodat ze meegaan met de bestelling
@@ -1334,6 +1497,8 @@
             mandje: mandje,                 // { "ME26936": 2, ... }
             controlebedrag: huidigTotaal,   // enkel ter controle
             bestelnummer: huidigeMededeling,
+            // enkel de CODE; de server zoekt zelf op hoeveel korting dat is
+            kortingscode: (kortingInfo && berekening().korting > 0) ? kortingInfo.code : "",
             email: (document.querySelector("input[name=email]") || {}).value || ""
           })
         });
@@ -1513,7 +1678,23 @@
       toonBon(bewaarBestelling("overschrijving"));   // moet vóór het legen van het mandje
       toonStap("bedankt");
       Object.keys(mandje).forEach(id => delete mandje[id]);
+      kortingInfo = null; bewaarKorting();   // code is gebruikt
       tekenMandje();
+    });
+
+    // Kortingscode: vakje openen, toepassen (knop of Enter), verwijderen
+    document.getElementById("korting-open").addEventListener("click", (e) => {
+      e.preventDefault();
+      e.target.style.display = "none";
+      document.getElementById("korting-invoer").style.display = "flex";
+      document.getElementById("korting-code").focus();
+    });
+    document.getElementById("korting-toepas").addEventListener("click", pasKortingToe);
+    document.getElementById("korting-code").addEventListener("keydown", (e) => {
+      if (e.key === "Enter"){ e.preventDefault(); pasKortingToe(); }
+    });
+    document.getElementById("korting-melding").addEventListener("click", (e) => {
+      if (e.target.closest("[data-korting-weg]")){ e.preventDefault(); verwijderKorting(); }
     });
 
     document.getElementById("print-knop").addEventListener("click", () => window.print());
@@ -1529,6 +1710,7 @@
     toonProducten();
     laadMandje();
     tekenMandje();
+    laadKorting();   // eerder ingevulde kortingscode terug (en stil nakijken)
   </script>  <!-- Alleen zichtbaar bij afdrukken: de bestelbon op papier -->
   <div id="bon-print"></div>
 
@@ -1538,7 +1720,7 @@
        De veldnamen moeten gelijk blijven aan die in mollie-webhook.js. -->
   <form name="betaling" data-netlify="true" netlify-honeypot="bot-field" hidden>
     <input name="bestelnummer"><input name="status"><input name="bedrag">
-    <input name="betaalmethode"><input name="email"><input name="mollie_id">
+    <input name="betaalmethode"><input name="email"><input name="korting"><input name="mollie_id">
     <input name="tijdstip"><input name="bot-field">
   </form>
 

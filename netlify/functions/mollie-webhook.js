@@ -78,6 +78,7 @@ exports.handler = async (event) => {
     bedrag:          bedrag,
     betaalmethode:   METHODE[betaling.method] || betaling.method || "",
     email:           md.email || "",
+    korting:         md.kortingscode ? `${md.kortingscode} (${md.korting})` : "geen",
     mollie_id:       betaling.id,
     tijdstip:        new Date().toLocaleString("nl-BE", { timeZone: "Europe/Brussels" })
   };

@@ -163,6 +163,7 @@
           <tbody>${rijen}</tbody>
           <tfoot>
             <tr><td colspan="3">Subtotaal</td><td class="bon-bedrag">${euro(bon.subtotaal)}</td></tr>
+            ${bon.korting > 0 ? `<tr><td colspan="3">${veilig(bon.kortingTekst || "Korting")}</td><td class="bon-bedrag">−${euro(bon.korting)}</td></tr>` : ""}
             <tr><td colspan="3">Verzending</td><td class="bon-bedrag">${bon.verzending === 0 ? "gratis" : euro(bon.verzending)}</td></tr>
             <tr class="bon-totaal"><td colspan="3">Totaal</td><td class="bon-bedrag">${euro(bon.totaal)}</td></tr>
           </tfoot>
@@ -197,6 +198,7 @@
     // Bij een geslaagde betaling: mandje + onthouden betaal-id wissen
     function maakMandjeLeeg(){
       try { localStorage.removeItem("heye_mandje"); } catch(e){}
+      try { localStorage.removeItem("heye_korting"); } catch(e){}   // kortingscode is gebruikt
       try { localStorage.removeItem("heye_betaling"); } catch(e){}
     }
 

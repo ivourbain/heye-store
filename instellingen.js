@@ -20,10 +20,14 @@
 //    winkel      naam voor de klant, regel onder het logo, begin van het bestelnummer
 //    bedrijf     juridische gegevens (voorwaarden, privacy, retour, voetbalk)
 //    betaling    rekening voor de QR-overschrijving
-//    verzending  verzendkosten, grens gratis verzending, levertermijn in werkdagen
+//    verzending  verzendkosten, grens gratis verzending, levertermijn in werkdagen,
+//                vervoerder (bv. "bpost") en leverland (bv. "België"). Staat er
+//                "België", dan aanvaardt het bestelformulier enkel een Belgische
+//                postcode (4 cijfers).
 //    infobalk    het zwarte balkje bovenaan elke pagina. Je mag deze
 //                invulwoorden gebruiken, ze worden vanzelf ingevuld:
-//                  gratisVanaf, verzendkost, levering  (tussen accolades)
+//                  gratisVanaf, verzendkost, levering, vervoerder, leverland
+//                  (tussen accolades)
 //    welkom      de banner als de klant "Alles" bekijkt
 //    afdelingVolgorde  volgorde van de afdelingsknoppen (en op de pakbon)
 //    afdelingen  per afdeling: knopnaam, merk (wordt vooraan de productnaam
@@ -59,12 +63,15 @@ const INSTELLINGEN = {
     "kosten": 6.95,
     "gratisVanaf": 40,
     "leveringMin": 2,
-    "leveringMax": 5
+    "leveringMax": 5,
+    "vervoerder": "bpost",
+    "leverland": "België"
   },
   "infobalk": {
     "vet": "Gratis verzending vanaf {gratisVanaf}",
     "rest": [
-      "Levering in {levering} werkdagen",
+      "Levering in {levering} werkdagen met {vervoerder}",
+      "Belgische winkel uit Sint-Amands",
       "Veilig betalen met Bancontact"
     ]
   },

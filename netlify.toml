@@ -18,7 +18,5 @@
 # de code gewoon in een mail. Netlify's geheimenscan mag KORTINGSCODES dus
 # overslaan; anders blokkeert hij de deploy zodra een code toevallig als
 # woord in een bestand voorkomt (bv. "HEYE" of "WELKOM").
-# Ook de mailinstellingen (gebruiker = je e-mailadres, server, poort) zijn
-# geen geheim. SMTP_WACHTWOORD wordt WEL gecontroleerd: dat is echt geheim.
 [build.environment]
-  SECRETS_SCAN_OMIT_KEYS = "KORTINGSCODES,SMTP_GEBRUIKER,SMTP_HOST,SMTP_POORT"
+  SECRETS_SCAN_OMIT_KEYS = "KORTINGSCODES"

@@ -14,7 +14,6 @@
 
 const { zoekCode } = require("./_gedeeld/korting");
 const { leesInstellingen } = require("./_gedeeld/instellingen");
-const { sluitAan } = require("./_gedeeld/opslag");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -31,13 +30,7 @@ exports.handler = async (event) => {
   let instellingen = {};
   try { instellingen = leesInstellingen(); } catch (e) { /* standaardwaarden gebruiken */ }
 
-  let info;
-  try {
-    sluitAan(event);   // opslag met de persoonlijke welkomstcodes
-    info = await zoekCode(data.code, instellingen);
-  } catch (e) {
-    return { statusCode: 503, body: JSON.stringify({ geldig: false, reden: "Even geen controle mogelijk" }) };
-  }
+  const info = zoekCode(data.code, instellingen);
   return {
     statusCode: 200,
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },

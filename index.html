@@ -229,31 +229,6 @@
     .korting-melding.ok{color:#1c6b3a}
     .korting-melding .korting-weg{color:var(--grijs);margin-left:6px;text-decoration:underline;cursor:pointer}
     .regelrij.korting-rij{color:#1c6b3a;font-weight:600}
-    /* ---- Welkomstkorting aanvragen (in de banner) ---- */
-    .welkom-vak{max-width:520px;margin:22px auto 0;background:var(--wit);border:1px solid var(--lijn);
-      border-radius:14px;padding:16px 18px 12px;box-shadow:0 4px 18px rgba(0,0,0,.06);text-align:center}
-    .welkom-titel{font-size:16px;margin-bottom:10px;color:var(--tekst, #222)}
-    .welkom-titel strong{color:var(--oranje-donker)}
-    .welkom-rij{display:flex;gap:8px}
-    .welkom-rij input{flex:1;min-width:0;padding:11px 12px;border:1px solid var(--lijn);border-radius:10px;
-      font-size:15px;font-family:inherit}
-    .welkom-rij input:focus{outline:none;border-color:var(--oranje)}
-    .welkom-rij button{border:none;background:var(--oranje);color:#fff;border-radius:10px;padding:0 16px;
-      font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap}
-    .welkom-rij button:hover{background:var(--oranje-donker)}
-    .welkom-rij button:disabled{opacity:.6;cursor:default}
-    .welkom-klein{font-size:12px;color:var(--grijs);margin-top:8px}
-    .welkom-klein a{color:inherit}
-    .welkom-melding{font-size:14px;margin-top:8px;color:#b3261e}
-    .welkom-melding.ok{color:#1c6b3a;font-weight:600}
-    /* verborgen veldje tegen spambots: een mens ziet het niet */
-    .welkom-honing{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
-    @media (max-width:520px){
-      .welkom-vak{margin-top:14px;padding:12px 12px 10px}
-      .welkom-titel{font-size:14.5px}
-      .welkom-rij{flex-direction:column}
-      .welkom-rij button{padding:11px 16px}
-    }
     .afreken{width:100%;background:var(--oranje);color:#fff;border:none;padding:14px;
       border-radius:12px;font-size:16px;font-weight:600;cursor:pointer}
     .afreken:hover{background:var(--oranje-donker)}
@@ -461,18 +436,6 @@
     <div class="hero-inner">
       <h1 id="hero-titel">Welkom bij Heye Store</h1>
       <p id="hero-tekst">Zorgvuldig gekozen accessoires, eerlijk geprijsd en rechtstreeks bij jou thuis geleverd.</p>
-      <!-- Welkomstkorting aanvragen: e-mailadres invullen -> persoonlijke code per mail
-           (netlify/functions/vraag-korting.mjs). Teksten komen uit instellingen.js (korting). -->
-      <form class="welkom-vak" id="welkom-vak" style="display:none" novalidate>
-        <div class="welkom-titel">🎁 <strong id="welkom-kop">15% welkomstkorting</strong> op je eerste bestelling</div>
-        <div class="welkom-rij" id="welkom-rij">
-          <input type="email" id="welkom-email" placeholder="Jouw e-mailadres" autocomplete="email" maxlength="100" aria-label="Jouw e-mailadres">
-          <button type="submit" id="welkom-knop">Stuur mijn code</button>
-        </div>
-        <input type="text" id="welkom-website" tabindex="-1" autocomplete="off" class="welkom-honing" aria-hidden="true">
-        <p class="welkom-klein" id="welkom-klein"></p>
-        <p class="welkom-melding" id="welkom-melding" style="display:none"></p>
-      </form>
     </div>
   </section>
 
@@ -549,7 +512,6 @@
       <input type="hidden" name="betaalwijze"  id="f-betaalwijze">
       <input type="hidden" name="totaal"       id="f-totaal">
       <input type="hidden" name="pakbon"       id="f-bestelling">
-      <input type="hidden" name="kortingscode" id="f-kortingscode">
 
       <h2 style="text-align:center">Jouw gegevens</h2>
       <p class="betaal-uitleg" style="text-align:center">Vul je gegevens in zodat we je bestelling kunnen leveren.
@@ -777,96 +739,6 @@
           + `<a href="#" class="korting-weg" data-korting-weg>verwijderen</a>`;
       }
       m.style.display = "block";
-    }
-
-    /* ---- WELKOMSTKORTING AANVRAGEN (vakje in de banner) ------------------
-       De bezoeker vult zijn e-mailadres in; vraag-korting.mjs maakt een
-       persoonlijke code en mailt die. Na een geslaagde aanvraag tonen we het
-       vakje op dit toestel niet meer (heye_welkom). */
-    const WELKOM_SLEUTEL = "heye_welkom";
-
-    function welkomMelding(tekst, ok){
-      const m = document.getElementById("welkom-melding");
-      m.className = "welkom-melding" + (ok ? " ok" : "");
-      m.textContent = tekst;
-      m.style.display = tekst ? "block" : "none";
-    }
-
-    function zetWelkomVak(){
-      const k = I.korting || {};
-      const vak = document.getElementById("welkom-vak");
-      if (k.actief === false || k.welkom === false) { vak.style.display = "none"; return; }
-      let alGevraagd = false;
-      try { alGevraagd = !!localStorage.getItem(WELKOM_SLEUTEL); } catch(e){}
-      if (alGevraagd) { vak.style.display = "none"; return; }
-      const pct = Number(k.percentage) || 15, min = Number(k.minimum) || 0, dagen = Number(k.geldigDagen) || 30;
-      document.getElementById("welkom-kop").textContent = `${pct}% welkomstkorting`;
-      document.getElementById("welkom-klein").innerHTML =
-        `Eén persoonlijke code per e-mailadres · ${dagen} dagen geldig`
-        + (min > 0 ? ` · vanaf ${euro(min)}` : "")
-        + ` · <a href="privacy.html" target="_blank">privacy</a>`;
-      vak.style.display = "block";
-    }
-
-    async function vraagWelkomCode(e){
-      e.preventDefault();
-      const veld = document.getElementById("welkom-email");
-      const knop = document.getElementById("welkom-knop");
-      const email = veld.value.trim();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){
-        welkomMelding("Vul een geldig e-mailadres in.", false);
-        veld.focus();
-        return;
-      }
-      knop.disabled = true; knop.textContent = "Even geduld…";
-      welkomMelding("", false);
-      let data = null;
-      try {
-        const resp = await fetch("/.netlify/functions/vraag-korting", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, website: document.getElementById("welkom-website").value })
-        });
-        data = await resp.json();
-      } catch(err){ data = null; }
-      knop.disabled = false; knop.textContent = "Stuur mijn code";
-      if (data && data.ok){
-        document.getElementById("welkom-rij").style.display = "none";
-        welkomMelding("✓ " + data.melding, true);
-        try { localStorage.setItem(WELKOM_SLEUTEL, "1"); } catch(e){}
-      } else {
-        welkomMelding((data && data.melding) || "Er liep iets mis. Probeer het straks opnieuw.", false);
-      }
-    }
-
-    // Klikte de klant op de link in de mail (…/?code=HEYE-XXXXXX)? Dan zetten we
-    // de code meteen klaar in het mandje, en halen we ze weer uit de adresbalk.
-    async function codeUitLink(){
-      let code = "";
-      try { code = new URLSearchParams(location.search).get("code") || ""; } catch(e){}
-      if (!code) return false;
-      try {
-        const url = new URL(location.href);
-        url.searchParams.delete("code");
-        history.replaceState(null, "", url.pathname + url.search + url.hash);
-      } catch(e){}
-      const antwoord = await vraagKorting(code);
-      const vak = document.getElementById("welkom-vak");
-      if (antwoord && antwoord.geldig){
-        kortingInfo = { code: antwoord.code, percentage: Number(antwoord.percentage), minimum: Number(antwoord.minimum) || 0 };
-        bewaarKorting();
-        tekenMandje();
-        try { localStorage.setItem(WELKOM_SLEUTEL, "1"); } catch(e){}
-        // In de banner bevestigen dat de code klaarstaat
-        vak.style.display = "block";
-        document.getElementById("welkom-rij").style.display = "none";
-        document.getElementById("welkom-klein").style.display = "none";
-        welkomMelding(`✓ Je kortingscode ${antwoord.code} staat klaar: ${antwoord.percentage}% korting wordt automatisch afgetrokken in je mandje.`, true);
-      } else if (antwoord){
-        vak.style.display = "block";
-        welkomMelding(antwoord.reden || "Deze kortingscode is niet geldig.", false);
-      }
-      return true;
     }
 
     // Een eerder ingevulde code terugladen en stil nakijken of ze nog geldt
@@ -1573,9 +1445,6 @@
       document.getElementById("f-bestelnummer").value = huidigeMededeling;
       document.getElementById("f-bestelling").value  = bestellingSamenvatting();
       document.getElementById("f-totaal").value      = euro(huidigTotaal);
-      // Enkel een code die echt korting geeft. Zo weet de server (submission-created)
-      // welke persoonlijke welkomstcode bij een overschrijving opgebruikt is.
-      document.getElementById("f-kortingscode").value = (b.korting > 0 && kortingInfo) ? kortingInfo.code : "";
 
       vulKlantIn();     // bewaarde gegevens alvast invullen (indien de klant dat koos)
       toonBestelFout(false);   // een melding van een vorige poging hoort hier niet meer
@@ -1821,7 +1690,6 @@
       document.getElementById("korting-code").focus();
     });
     document.getElementById("korting-toepas").addEventListener("click", pasKortingToe);
-    document.getElementById("welkom-vak").addEventListener("submit", vraagWelkomCode);
     document.getElementById("korting-code").addEventListener("keydown", (e) => {
       if (e.key === "Enter"){ e.preventDefault(); pasKortingToe(); }
     });
@@ -1842,9 +1710,7 @@
     toonProducten();
     laadMandje();
     tekenMandje();
-    zetWelkomVak();  // vakje "welkomstkorting aanvragen" in de banner
-    // Code uit de link in de mail? Die gaat voor; anders de eerder ingevulde code terugladen.
-    codeUitLink().then(gebruikt => { if (!gebruikt) laadKorting(); });
+    laadKorting();   // eerder ingevulde kortingscode terug (en stil nakijken)
   </script>  <!-- Alleen zichtbaar bij afdrukken: de bestelbon op papier -->
   <div id="bon-print"></div>
 

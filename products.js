@@ -1,4 +1,4 @@
-// De 223 producten (220 zichtbaar, 3 verborgen).
+// De 223 producten (219 zichtbaar, 4 verborgen).
 // Gemaakt met beheer.html.
 // Niet met de hand bewerken: open beheer.html en pas het daar aan.
 const PRODUCTEN = [
@@ -82,7 +82,7 @@ const PRODUCTEN = [
   {"id":"ME908080","ean":"8055769080802","bestelcode":205374,"naam":"Melissa Make-upkwastenset 8,5 x 4-10 x 1 cm 5 stuks","prijs_incl_btw":4.5,"foto":"fotos/ME908080.jpg","plaats":"96","categorie":"Make-up"},
   {"id":"ME826093","ean":"8059037826093","bestelcode":231965,"naam":"Melissa Gezichtssponzen 8 x 8 cm 2 stuks","prijs_incl_btw":2.5,"foto":"fotos/ME826093.jpg","plaats":"97","categorie":"Sponzen"},
   {"id":"ME863570","ean":"8055304635702","bestelcode":236090,"naam":"Melissa Netspons voor het lichaam 11 cm 50 g","prijs_incl_btw":3.5,"foto":"fotos/ME863570.jpg","plaats":"98","categorie":"Sponzen"},
-  {"id":"ME720412","ean":"8057622720412","bestelcode":239093,"naam":"Melissa Haarband 12 x 2,5 cm","prijs_incl_btw":2.5,"foto":"fotos/ME720412.jpg","plaats":"99","categorie":"Haarbanden"},
+  {"id":"ME720412","ean":"8057622720412","bestelcode":239093,"naam":"Melissa Haarband 12 x 2,5 cm","prijs_incl_btw":2.5,"foto":"fotos/ME720412.jpg","plaats":"99","categorie":"Haarbanden","zichtbaar":false},
   {"id":"ME872817","ean":"8057622728173","bestelcode":240769,"naam":"Melissa Haarklemmen 6 cm 3 stuks","prijs_incl_btw":2.5,"foto":"fotos/ME872817.jpg","plaats":"100","categorie":"Haarclips"},
   {"id":"ME835405","ean":"8055954354053","bestelcode":241266,"naam":"Melissa Haarklemmen 3,5 cm 3 stuks","prijs_incl_btw":3,"foto":"fotos/ME835405.jpg","plaats":"101","categorie":"Haarclips"},
   {"id":"ME296159","ean":"8054342296159","bestelcode":243875,"naam":"Melissa Zachte haarklem 9 cm","prijs_incl_btw":3,"foto":"fotos/ME296159.jpg","plaats":"102","categorie":"Haarclips"},

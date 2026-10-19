@@ -48,7 +48,7 @@ const INSTELLINGEN = {
     "land": "België",
     "ondernemingsnummer": "0449.281.828",
     "btw": "BE 0449.281.828",
-    "email": "ivo.urbain@gmail.com"
+    "email": "info@heyestore.be"
   },
   "betaling": {
     "rekeninghouder": "CR.Service - Heye Store",

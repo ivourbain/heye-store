@@ -71,7 +71,7 @@ const INSTELLINGEN = {
     "vet": "Gratis verzending vanaf {gratisVanaf}",
     "rest": [
       "Levering in {levering} werkdagen met {vervoerder}",
-      "Belgische winkel uit Sint-Amands",
+      "Vlaamse webwinkel uit Sint-Amands",
       "Veilig betalen met Bancontact"
     ]
   },

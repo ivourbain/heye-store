@@ -266,6 +266,12 @@
       padding:13px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px}
     .afreken-tweede:hover{background:var(--achtergrond)}
     .keuze-fout{color:#b3261e;font-size:13px;margin-top:12px;text-align:center}
+    /* Melding als de bestelling niet bij ons aankwam (zie verstuurBestelling) */
+    .bestel-fout{display:none;text-align:left;background:#fdecea;color:#8c1d18;border:1px solid #f3c1bd;
+      border-radius:10px;padding:12px 14px;margin:0 0 14px;font-size:13.5px;line-height:1.5}
+    .bestel-fout.toon{display:block}
+    .bestel-fout a.mailknop{display:inline-block;margin-top:8px;background:#b3261e;color:#fff;text-decoration:none;
+      padding:8px 14px;border-radius:9px;font-weight:600}
 
     /* ---- Voetbalk met juridische links ---- */
     footer{border-top:1px solid var(--lijn);background:var(--wit);margin-top:20px}
@@ -510,9 +516,15 @@
       <button type="button" class="afreken" id="kies-online">💳 Online betalen (Bancontact / kaart)</button>
       <button type="button" class="afreken-tweede" id="kies-overschrijving">Betalen via overschrijving (QR-code)</button>
       <p id="keuze-fout" class="keuze-fout" style="display:none"></p>
+      <div class="bestel-fout">⚠️ <strong>Je bestelling kon niet automatisch naar ons verstuurd worden.</strong>
+        Probeer opnieuw, kies betalen via overschrijving, of stuur ze ons per e-mail — alles staat al klaar.<br>
+        <a class="mailknop" href="#">✉ Bestelling e-mailen</a></div>
     </div>
 
     <div id="betaal-stap1" style="display:none">
+      <div class="bestel-fout">⚠️ <strong>Je bestelling kon niet automatisch naar ons verstuurd worden.</strong>
+        Stuur ze ons even per e-mail — alles staat al klaar, je hoeft enkel op verzenden te klikken.<br>
+        <a class="mailknop" href="#">✉ Bestelling e-mailen</a></div>
       <h2>Bijna klaar — scan &amp; betaal</h2>
       <p class="betaal-uitleg">Open je bankapp, kies "QR-code scannen" en scan de code hieronder.
          De overschrijving is al ingevuld — je hoeft enkel te bevestigen.</p>
@@ -534,6 +546,9 @@
       <button class="afreken" id="betaald-knop">Ik heb betaald</button>
     </div>
     <div id="betaal-stap2" style="display:none">
+      <div class="bestel-fout">⚠️ <strong>Je bestelling kon niet automatisch naar ons verstuurd worden.</strong>
+        Stuur ze ons even per e-mail — alles staat al klaar, je hoeft enkel op verzenden te klikken.<br>
+        <a class="mailknop" href="#">✉ Bestelling e-mailen</a></div>
       <div class="bedankt">✓</div>
       <h2>Bedankt voor je bestelling!</h2>
       <p class="betaal-uitleg">Zodra we je betaling zien binnenkomen, wordt je bestelling
@@ -1268,6 +1283,7 @@
       document.getElementById("f-totaal").value      = euro(huidigTotaal);
 
       vulKlantIn();     // bewaarde gegevens alvast invullen (indien de klant dat koos)
+      toonBestelFout(false);   // een melding van een vorige poging hoort hier niet meer
       toonStap("form");
       document.getElementById("betaal").classList.add("open");
       document.getElementById("betaal-overlay").classList.add("open");
@@ -1301,6 +1317,14 @@
       knop.disabled = true;
       const origineel = knop.textContent;
       knop.textContent = "Even geduld…";
+      // EERST de bestelling bij ons registreren. Lukt dat niet, dan sturen we de
+      // klant NIET naar Mollie: anders zou er betaald kunnen worden voor een
+      // bestelling waarvan wij het adres en de producten niet kennen.
+      if (!(await verstuurBestelling("online"))) {
+        knop.disabled = false;
+        knop.textContent = origineel;
+        return;
+      }
       try {
         const resp = await fetch("/.netlify/functions/create-payment", {
           method: "POST",
@@ -1320,7 +1344,6 @@
           // De bestelbon nu bewaren: na de omweg langs Mollie is het mandje
           // mogelijk al leeg en weten we niet meer wat er besteld was.
           bewaarBestelling("online");
-          await verstuurBestelling("online");   // afwachten: hierna verlaten we de pagina
           window.location.href = data.checkoutUrl;   // door naar de betaalpagina van Mollie
           return;
         }
@@ -1389,17 +1412,55 @@
             + `Wacht op de aparte mail "BETAALD ✓" voor bestelnummer ${huidigeMededeling} vóór je verzendt. `
             + `Geen mail? Dan is er niet betaald (of kijk in het Mollie-dashboard).`
           : `Overschrijving — ${euro(huidigTotaal)} nog te ontvangen, mededeling ${huidigeMededeling}`;
-      try {
-        // Netlify vangt dit op; jij ziet elke bestelling in je Netlify-dashboard
-        await fetch("/", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams(new FormData(document.getElementById("bestelform"))).toString()
-        });
-      } catch (err) {
-        // Lukt het versturen niet (bv. bij lokaal testen)? Dan gaan we toch door naar de betaling.
-        console.log("Bestelling versturen mislukte (lokaal testen?):", err);
+      // Netlify vangt dit op; jij ziet elke bestelling in je Netlify-dashboard.
+      // We kijken WEL of Netlify ze echt aanvaardde (antwoord 200). Vroeger gingen we
+      // hoe dan ook door, waardoor een bestelling ongemerkt kon verdwijnen (bv. als
+      // de formulieren in Netlify uitgeschakeld stonden). Mislukt het, dan proberen
+      // we nog één keer; lukt het dan nog niet, dan geven we "false" terug en krijgt
+      // de klant een knop om de bestelling per e-mail te sturen.
+      const body = new URLSearchParams(new FormData(document.getElementById("bestelform"))).toString();
+      for (let poging = 1; poging <= 2; poging++) {
+        try {
+          const resp = await fetch("/", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: body
+          });
+          if (resp.ok) { toonBestelFout(false); return true; }
+          console.log("Bestelling niet aanvaard door Netlify, status", resp.status);
+        } catch (err) {
+          console.log("Bestelling versturen mislukte:", err);
+        }
+        if (poging === 1) await new Promise(r => setTimeout(r, 1200));
       }
+      toonBestelFout(true);
+      return false;
+    }
+
+    // De melding "kon niet verstuurd worden" tonen of verbergen, en de e-mailknop
+    // vullen met alles wat we nodig hebben: klantgegevens, betaalwijze en pakbon.
+    function toonBestelFout(toon){
+      const veld = n => ((document.querySelector(`#bestelform [name="${n}"]`) || {}).value || "").trim();
+      const tekst = [
+        `Bestelnummer: ${huidigeMededeling}`,
+        `Betaalwijze: ${veld("betaalwijze")}`,
+        "",
+        `Naam: ${veld("naam")}`,
+        `E-mail: ${veld("email")}`,
+        `Adres: ${veld("adres")}, ${veld("postcode")} ${veld("gemeente")}`,
+        `Telefoon: ${veld("telefoon")}`,
+        `Opmerking: ${veld("opmerking")}`,
+        "",
+        bestellingSamenvatting()
+      ].join("\n");
+      const adres = (I.bedrijf && I.bedrijf.email) || "";
+      const link = `mailto:${adres}?subject=${encodeURIComponent("Bestelling " + huidigeMededeling)}`
+                 + `&body=${encodeURIComponent(tekst)}`;
+      document.querySelectorAll(".bestel-fout").forEach(el => {
+        el.classList.toggle("toon", !!toon);
+        const a = el.querySelector("a.mailknop");
+        if (a) a.href = link;
+      });
     }
 
     // Formulier ingevuld: gegevens onthouden en door naar de betaalkeuze
@@ -1422,8 +1483,13 @@
 
     // De twee betaalkeuzes
     document.getElementById("kies-online").addEventListener("click", (e) => startMollie(e.currentTarget));
-    document.getElementById("kies-overschrijving").addEventListener("click", () => {
-      verstuurBestelling("overschrijving");   // mag op de achtergrond doorlopen
+    document.getElementById("kies-overschrijving").addEventListener("click", async (e) => {
+      const knop = e.currentTarget, origineel = knop.textContent;
+      knop.disabled = true; knop.textContent = "Even geduld…";
+      // Lukt het versturen niet, dan tonen we de QR toch (de klant kan betalen),
+      // maar met bovenaan de melding en de knop om de bestelling te e-mailen.
+      await verstuurBestelling("overschrijving");
+      knop.disabled = false; knop.textContent = origineel;
       gaNaarBetaling();
     });
 

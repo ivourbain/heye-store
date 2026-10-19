@@ -12,17 +12,10 @@
 //  het adres terug te lezen.
 // ============================================================
 
-const crypto = require("crypto");
-const { getStore, connectLambda } = require("@netlify/blobs");
+import crypto from "crypto";
+import { getStore } from "@netlify/blobs";
 
 const NAAM = "welkomstkorting";
-
-// Oude functies (exports.handler) moeten de opslag eerst "aansluiten" met
-// hun event. Nieuwe functies (export default) hoeven dat niet.
-function sluitAan(event) {
-  if (globalThis.__testOpslag) return;           // tijdens het testen
-  if (event && event.blobs) connectLambda(event);
-}
 
 function opslag() {
   if (globalThis.__testOpslag) return globalThis.__testOpslag;
@@ -41,4 +34,4 @@ function vandaag() {
   return new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Brussels" });
 }
 
-module.exports = { sluitAan, opslag, emailHash, vandaag };
+export { opslag, emailHash, vandaag };

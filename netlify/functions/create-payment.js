@@ -15,11 +15,13 @@
 //  een bestelling van 30 euro voor 1 cent afrekenen.
 // ============================================================
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+const HIER = path.dirname(fileURLToPath(import.meta.url));
 // Kortingscodes: welke geldig zijn en hoe de korting berekend wordt
-const { zoekCode, kortingBedrag } = require("./_gedeeld/korting");
-const { sluitAan } = require("./_gedeeld/opslag");
+import { zoekCode, kortingBedrag } from "./_gedeeld/korting.js";
+import { alsLambda } from "./_gedeeld/lambda.js";
 
 // ⚙️ VERZENDKOSTEN staan niet meer hier, maar in instellingen.js — hetzelfde
 //    bestand dat de webshop gebruikt. Zo kunnen browser en server nooit meer
@@ -44,8 +46,8 @@ function leesProducten() {
   // dus we proberen de gebruikelijke paden tot er één lukt.
   const kandidaten = [
     path.join(process.cwd(), "products.js"),
-    path.join(__dirname, "products.js"),
-    path.join(__dirname, "..", "..", "products.js"),
+    path.join(HIER, "products.js"),
+    path.join(HIER, "..", "..", "products.js"),
     "/var/task/products.js"
   ];
 
@@ -80,8 +82,8 @@ function leesInstellingen() {
 
   const kandidaten = [
     path.join(process.cwd(), "instellingen.js"),
-    path.join(__dirname, "instellingen.js"),
-    path.join(__dirname, "..", "..", "instellingen.js"),
+    path.join(HIER, "instellingen.js"),
+    path.join(HIER, "..", "..", "instellingen.js"),
     "/var/task/instellingen.js"
   ];
 
@@ -113,7 +115,7 @@ function centen(bedrag) {
   return Math.round(bedrag * 100) / 100;
 }
 
-exports.handler = async (event) => {
+async function handler(event) {
   // Enkel POST-verzoeken toelaten
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
@@ -205,7 +207,6 @@ exports.handler = async (event) => {
   let kortingInfo = null;
   if (data.kortingscode) {
     try {
-      sluitAan(event);   // opslag met de persoonlijke welkomstcodes
       kortingInfo = await zoekCode(data.kortingscode, instellingen);
     } catch (e) {
       return { statusCode: 503, body: JSON.stringify({ error: "Kortingscode kon nu niet gecontroleerd worden" }) };
@@ -301,4 +302,7 @@ exports.handler = async (event) => {
   } catch (e) {
     return { statusCode: 502, body: JSON.stringify({ error: "Kon Mollie niet bereiken" }) };
   }
-};
+}
+
+// Nieuw Netlify-formaat: Request erin, Response eruit (zie _gedeeld/lambda.js)
+export default (req) => alsLambda(req, handler);

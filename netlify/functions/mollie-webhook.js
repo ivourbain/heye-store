@@ -35,10 +35,10 @@ const METHODE = {
   ideal: "iDEAL", applepay: "Apple Pay", paypal: "PayPal", banktransfer: "Overschrijving"
 };
 
-const { markeerGebruikt } = require("./_gedeeld/korting");
-const { sluitAan } = require("./_gedeeld/opslag");
+import { markeerGebruikt } from "./_gedeeld/korting.js";
+import { alsLambda } from "./_gedeeld/lambda.js";
 
-exports.handler = async (event) => {
+async function handler(event) {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
   }
@@ -77,7 +77,6 @@ exports.handler = async (event) => {
   // Lukt dat niet, dan laten we de melding hieronder gewoon doorgaan.
   if (betaling.status === "paid" && md.kortingscode) {
     try {
-      sluitAan(event);
       await markeerGebruikt(md.kortingscode, md.bestelnummer, "online");
     } catch (e) {
       console.log("Kortingscode niet als gebruikt gemarkeerd:", e.message);
@@ -112,4 +111,7 @@ exports.handler = async (event) => {
 
   // 200 = "ontvangen" voor Mollie. Bij een andere code probeert Mollie het later opnieuw.
   return { statusCode: 200, body: "OK" };
-};
+}
+
+// Nieuw Netlify-formaat: Request erin, Response eruit (zie _gedeeld/lambda.js)
+export default (req) => alsLambda(req, handler);

@@ -8,7 +8,9 @@
 //  zodat je geheime Mollie-sleutel nooit in de browser terechtkomt.
 // ============================================================
 
-exports.handler = async (event) => {
+import { alsLambda } from "./_gedeeld/lambda.js";
+
+async function handler(event) {
   const apiKey = process.env.MOLLIE_API_KEY;
   if (!apiKey) {
     return { statusCode: 500, body: JSON.stringify({ error: "Mollie-sleutel ontbreekt op de server" }) };
@@ -48,4 +50,7 @@ exports.handler = async (event) => {
   } catch (e) {
     return { statusCode: 502, body: JSON.stringify({ error: "Kon Mollie niet bereiken" }) };
   }
-};
+}
+
+// Nieuw Netlify-formaat: Request erin, Response eruit (zie _gedeeld/lambda.js)
+export default (req) => alsLambda(req, handler);

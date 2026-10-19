@@ -11,9 +11,9 @@
 //    SMTP_POORT        standaard: 587
 // ============================================================
 
-const nodemailer = require("nodemailer");
+import nodemailer from "nodemailer";
 
-async function verstuurMail({ van, aan, onderwerp, tekst, html }) {
+export async function verstuurMail({ van, aan, onderwerp, tekst, html }) {
   // Tijdens het testen sturen we niets echt weg
   if (globalThis.__testMail) return globalThis.__testMail({ van, aan, onderwerp, tekst, html });
 
@@ -43,4 +43,3 @@ async function verstuurMail({ van, aan, onderwerp, tekst, html }) {
   });
 }
 
-module.exports = { verstuurMail };

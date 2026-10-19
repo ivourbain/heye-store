@@ -4,20 +4,22 @@
 //  create-payment.js). Wordt gebruikt door check-korting.js.
 // ============================================================
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+const HIER = path.dirname(fileURLToPath(import.meta.url));
 
 let cache = null;
 
-function leesInstellingen() {
+export function leesInstellingen() {
   if (cache) return cache;
 
   const kandidaten = [
     path.join(process.cwd(), "instellingen.js"),
-    path.join(__dirname, "instellingen.js"),
-    path.join(__dirname, "..", "instellingen.js"),
-    path.join(__dirname, "..", "..", "instellingen.js"),
-    path.join(__dirname, "..", "..", "..", "instellingen.js"),
+    path.join(HIER, "instellingen.js"),
+    path.join(HIER, "..", "instellingen.js"),
+    path.join(HIER, "..", "..", "instellingen.js"),
+    path.join(HIER, "..", "..", "..", "instellingen.js"),
     "/var/task/instellingen.js"
   ];
 
@@ -38,4 +40,3 @@ function leesInstellingen() {
   throw new Error("instellingen.js niet gevonden of onleesbaar op de server");
 }
 
-module.exports = { leesInstellingen };

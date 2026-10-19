@@ -13,32 +13,30 @@
 //   mollie-webhook.js — een afgebroken betaling verbruikt de code dus niet.)
 // ============================================================
 
-const { markeerGebruikt } = require("./_gedeeld/korting");
-const { sluitAan } = require("./_gedeeld/opslag");
+import { markeerGebruikt } from "./_gedeeld/korting.js";
 
-exports.handler = async (event) => {
-  let payload;
+export default async (req) => {
+  let payload = {};
   try {
-    payload = JSON.parse(event.body || "{}").payload || {};
+    payload = (await req.json()).payload || {};
   } catch (e) {
-    return { statusCode: 200, body: "Geen leesbare gegevens" };
+    return new Response("Geen leesbare gegevens");
   }
 
-  const formulier = payload.form_name || (payload.data || {})["form-name"] || "";
+  // Enkel het bestelformulier heeft de velden "kortingscode" en "betaalwijze"
+  // (het formulier "betaling" van de Mollie-melding niet).
   const d = payload.data || {};
-  if (formulier !== "bestelling" || !d.kortingscode) {
-    return { statusCode: 200, body: "Niets te doen" };
-  }
+  if (!d.kortingscode) return new Response("Niets te doen");
+
   // Enkel overschrijvingen. Online bestellingen wachten op Mollie.
   if (!String(d.betaalwijze || "").startsWith("Overschrijving")) {
-    return { statusCode: 200, body: "Online bestelling — wacht op Mollie" };
+    return new Response("Online bestelling — wacht op Mollie");
   }
 
   try {
-    sluitAan(event);
     await markeerGebruikt(d.kortingscode, d.bestelnummer, "overschrijving");
   } catch (e) {
     console.log("Kortingscode niet als gebruikt gemarkeerd:", e.message);
   }
-  return { statusCode: 200, body: "OK" };
+  return new Response("OK");
 };

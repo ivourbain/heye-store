@@ -1,7 +1,8 @@
 {
   "name": "heye-store",
   "private": true,
-  "description": "Bouwstenen voor de serverfuncties (netlify/functions). Netlify installeert deze zelf bij elke deploy.",
+  "type": "module",
+  "description": "Bouwstenen voor de serverfuncties (netlify/functions). Netlify installeert deze zelf bij elke deploy. \"type\": \"module\" = de functies gebruiken import/export (nieuw Netlify-formaat).",
   "dependencies": {
     "@netlify/blobs": "^11.1.4",
     "nodemailer": "^10.1.7"

@@ -16,15 +16,10 @@
 //  Het oude formaat (exports.handler) wordt in 2027 afgeschaft.
 // ============================================================
 
-import korting from "./_gedeeld/korting.js";
-import opslagModule from "./_gedeeld/opslag.js";
-import instellingenModule from "./_gedeeld/instellingen.js";
-import mailModule from "./_gedeeld/mail.js";
-
-const { kortingInstellingen, maakCode, datumTekst } = korting;
-const { opslag, emailHash, vandaag } = opslagModule;
-const { leesInstellingen } = instellingenModule;
-const { verstuurMail } = mailModule;
+import { kortingInstellingen, maakCode, datumTekst } from "./_gedeeld/korting.js";
+import { opslag, emailHash, vandaag } from "./_gedeeld/opslag.js";
+import { leesInstellingen } from "./_gedeeld/instellingen.js";
+import { verstuurMail } from "./_gedeeld/mail.js";
 
 const MAX_VERSTUURD   = 3;     // hoe vaak we dezelfde code opnieuw mailen
 const MAX_PER_DAG     = 200;   // nieuwe codes per dag, als rem tegen misbruik

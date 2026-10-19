@@ -12,10 +12,11 @@
 //         of { geldig: false, reden }
 // ============================================================
 
-const { zoekCode } = require("./_gedeeld/korting");
-const { leesInstellingen } = require("./_gedeeld/instellingen");
+import { zoekCode } from "./_gedeeld/korting.js";
+import { leesInstellingen } from "./_gedeeld/instellingen.js";
+import { alsLambda } from "./_gedeeld/lambda.js";
 
-exports.handler = async (event) => {
+async function handler(event) {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
   }
@@ -30,10 +31,18 @@ exports.handler = async (event) => {
   let instellingen = {};
   try { instellingen = leesInstellingen(); } catch (e) { /* standaardwaarden gebruiken */ }
 
-  const info = zoekCode(data.code, instellingen);
+  let info;
+  try {
+    info = await zoekCode(data.code, instellingen);
+  } catch (e) {
+    return { statusCode: 503, body: JSON.stringify({ geldig: false, reden: "Even geen controle mogelijk" }) };
+  }
   return {
     statusCode: 200,
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
     body: JSON.stringify(info)
   };
-};
+}
+
+// Nieuw Netlify-formaat: Request erin, Response eruit (zie _gedeeld/lambda.js)
+export default (req) => alsLambda(req, handler);

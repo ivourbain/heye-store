@@ -25,6 +25,8 @@
 //     gratisVanaf    "€40"
 //     levering       "2–5"        (zoals in de infobalk)
 //     leveringTot    "2 tot 5"    (zoals in de voorwaarden)
+//     vervoerder     "bpost"
+//     leverland      "België"
 // ============================================================
 
 (function () {
@@ -93,7 +95,9 @@
     verzendkost:        euroKort(v.kosten),
     gratisVanaf:        euroKort(v.gratisVanaf),
     levering:           `${v.leveringMin}–${v.leveringMax}`,
-    leveringTot:        `${v.leveringMin} tot ${v.leveringMax}`
+    leveringTot:        `${v.leveringMin} tot ${v.leveringMax}`,
+    vervoerder:         v.vervoerder,
+    leverland:          v.leverland
   };
 
   // "Gratis verzending vanaf {gratisVanaf}" -> "Gratis verzending vanaf €40"

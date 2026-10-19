@@ -450,7 +450,7 @@
       <a href="privacy.html">Privacybeleid</a>
       <a href="retour.html">Retour &amp; herroeping</a>
     </div>
-    <div>© <span data-i="toonnaam">Heye Store</span> — CR.Service · <span data-i="adres">Winkelstraat 69/1, 2890 Sint-Amands</span></div>
+    <div>© <span data-i="toonnaam">Heye Store</span> — CR.Service · Belgische onderneming · <span data-i="adres">Winkelstraat 69/1, 2890 Sint-Amands</span></div>
   </div></footer>
 
   <!-- Het winkelmandje -->
@@ -463,7 +463,7 @@
     <div class="items" id="mand-items"></div>
     <div class="voet">
       <div class="regelrij"><span>Subtotaal</span><span id="subtotaal">€0,00</span></div>
-      <div class="regelrij"><span>Verzending</span><span id="verzending">—</span></div>
+      <div class="regelrij"><span>Verzending met <span data-i="vervoerder">bpost</span></span><span id="verzending">—</span></div>
       <p class="gratis-tip" id="gratis-tip" style="display:none"></p>
       <div class="totaalregel"><span>Totaal</span><span id="totaal">€0,00</span></div>
       <div class="btw">incl. 21% btw</div>
@@ -490,12 +490,13 @@
       <input type="hidden" name="pakbon"       id="f-bestelling">
 
       <h2 style="text-align:center">Jouw gegevens</h2>
-      <p class="betaal-uitleg" style="text-align:center">Vul je gegevens in zodat we je bestelling kunnen leveren.</p>
+      <p class="betaal-uitleg" style="text-align:center">Vul je gegevens in zodat we je bestelling kunnen leveren.
+        We leveren enkel in <span data-i="leverland">België</span>, met <span data-i="vervoerder">bpost</span>.</p>
       <div class="veld"><label>Naam *</label><input name="naam" required></div>
       <div class="veld"><label>E-mail *</label><input type="email" name="email" required></div>
       <div class="veld"><label>Straat en nummer *</label><input name="adres" required></div>
       <div class="tweekolom">
-        <div class="veld"><label>Postcode *</label><input name="postcode" required></div>
+        <div class="veld"><label>Postcode *</label><input name="postcode" required inputmode="numeric" autocomplete="postal-code"></div>
         <div class="veld"><label>Gemeente *</label><input name="gemeente" required></div>
       </div>
       <div class="veld"><label>Telefoon (optioneel)</label><input name="telefoon"></div>
@@ -1159,7 +1160,7 @@
     // in één richting kunt aflopen in plaats van heen en weer.
     function bestellingSamenvatting(){
       // Elke afdeling heeft zijn eigen rek met zijn eigen nummering: Melissa
-      // loopt van 1 tot 85, Montana ook vanaf 1. Zouden we alles op één hoop
+      // en Montana beginnen allebei bij 1. Zouden we alles op één hoop
       // sorteren, dan wisselden de regels tussen de twee rekken heen en weer.
       // Daarom: eerst per afdeling groeperen, en pas daarbinnen op plaats sorteren.
       const perAfdeling = {};
@@ -1464,6 +1465,16 @@
     }
 
     // Formulier ingevuld: gegevens onthouden en door naar de betaalkeuze
+    // Leveren we enkel in België, dan aanvaarden we enkel een Belgische postcode
+    // (4 cijfers, 1000 t.e.m. 9999). De browser toont zelf de melding.
+    if ((I.verzending || {}).leverland === "België"){
+      const pc = document.querySelector('[name="postcode"]');
+      if (pc){
+        pc.pattern = "[1-9][0-9]{3}";
+        pc.title = "Een Belgische postcode van 4 cijfers — we leveren enkel in België";
+      }
+    }
+
     document.getElementById("bestelform").addEventListener("submit", (e) => {
       e.preventDefault();
       // gegevens onthouden of net wissen, volgens het vinkje

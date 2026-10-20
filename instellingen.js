@@ -36,7 +36,9 @@
 //                actief (true/false) en tekst = de EXACTE zin naast het vinkje.
 //                Die zin wordt ook als bewijs van toestemming bewaard: pas hem
 //                dus niet stilletjes aan. Nieuwe inschrijvers komen in Resend
-//                (RESEND_API_KEY in Netlify).
+//                (RESEND_API_KEY in Netlify). afzender = het adres waarvan de
+//                nieuwsbrief vertrekt; moet op een domein staan dat in Resend
+//                geverifieerd is (send.heyestore.be).
 //    infobalk    het zwarte balkje bovenaan elke pagina. Je mag deze
 //                invulwoorden gebruiken, ze worden vanzelf ingevuld:
 //                  gratisVanaf, verzendkost, levering, vervoerder, leverland
@@ -89,7 +91,8 @@ const INSTELLINGEN = {
   },
   "nieuwsbrief": {
     "actief": true,
-    "tekst": "Ja, stuur me af en toe nieuws en aanbiedingen van Heye Store. Afmelden kan altijd."
+    "tekst": "Ja, stuur me af en toe nieuws en aanbiedingen van Heye Store. Afmelden kan altijd.",
+    "afzender": "nieuws@send.heyestore.be"
   },
   "infobalk": {
     "vet": "Gratis verzending vanaf {gratisVanaf}",

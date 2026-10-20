@@ -229,6 +229,11 @@
     .korting-melding.ok{color:#1c6b3a}
     .korting-melding .korting-weg{color:var(--grijs);margin-left:6px;text-decoration:underline;cursor:pointer}
     .regelrij.korting-rij{color:#1c6b3a;font-weight:600}
+    .productlink-balk{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+      background:var(--oranje-licht);border:1px solid var(--lijn);border-radius:12px;padding:10px 14px;margin:6px 0 12px;font-size:14px}
+    .productlink-balk button{border:1px solid var(--oranje);background:var(--wit);color:var(--oranje-donker);border-radius:9px;
+      padding:7px 12px;font-weight:600;cursor:pointer;font-size:13.5px}
+    .productlink-balk button:hover{background:var(--oranje);color:#fff}
     /* ---- Welkomstkorting aanvragen (in de banner) ---- */
     .welkom-vak{max-width:520px;margin:22px auto 0;background:var(--wit);border:1px solid var(--lijn);
       border-radius:14px;padding:16px 18px 12px;box-shadow:0 4px 18px rgba(0,0,0,.06);text-align:center}
@@ -497,6 +502,11 @@
         <span class="pijl" aria-hidden="true">▼</span>
       </button>
       <div class="filters" id="filters"></div>
+    </div>
+    <!-- Link uit de nieuwsbrief (…/?p=ME28585): enkel die producten tonen -->
+    <div class="productlink-balk" id="productlink-balk" style="display:none">
+      <span id="productlink-tekst"></span>
+      <button type="button" id="productlink-alles">Alle producten bekijken</button>
     </div>
     <p class="telling" id="telling"></p>
     <div class="rooster" id="rooster"></div>
@@ -893,6 +903,36 @@
       return true;
     }
 
+    /* ---- PRODUCTLINK (…/?p=ME28585 of ?p=ME28585,ME26936) ----------------
+       Komt uit de nieuwsbrief. We tonen enkel die producten, met een balkje
+       "Alle producten bekijken". Onbekende of verborgen producten negeren we. */
+    function leesProductLink(){
+      let ids = [];
+      try { ids = (new URLSearchParams(location.search).get("p") || "").split(",").map(x => x.trim()).filter(Boolean); } catch(e){}
+      if (!ids.length) return;
+      const gevraagd = new Set(ids.filter(id => { const p = vind(id); return p && isZichtbaar(p); }).slice(0, 30));
+      if (!gevraagd.size) return;
+      const toon = new Set(gevraagd);
+      gevraagd.forEach(id => {
+        const p = vind(id);
+        if (heeftGroep(p)) ALLE_PRODUCTEN.forEach(q => {
+          if (isZichtbaar(q) && heeftGroep(q) && String(q.groep).trim() === String(p.groep).trim()) toon.add(q.id);
+        });
+      });
+      gekozenProducten = { gevraagd, toon };
+      document.getElementById("productlink-tekst").textContent =
+        gevraagd.size === 1 ? "Je bekijkt het product uit onze nieuwsbrief." : `Je bekijkt de ${gevraagd.size} producten uit onze nieuwsbrief.`;
+    }
+    function wisProductLink(){
+      if (!gekozenProducten) return;
+      gekozenProducten = null;
+      try {
+        const url = new URL(location.href);
+        url.searchParams.delete("p");
+        history.replaceState(null, "", url.pathname + url.search + url.hash);
+      } catch(e){}
+    }
+
     // Een eerder ingevulde code terugladen en stil nakijken of ze nog geldt
     async function laadKorting(){
       try { kortingInfo = JSON.parse(localStorage.getItem(KORTING_SLEUTEL) || "null"); } catch(e){ kortingInfo = null; }
@@ -994,6 +1034,8 @@
 
     // Welke afdeling en categorie zijn actief, en wat typte de klant in de zoekbalk
     let actieveAfdeling = "alles";
+    // Productlink uit de nieuwsbrief: { gevraagd: Set(id's), toon: Set(id's incl. groepsleden) } of null
+    let gekozenProducten = null;
     let actieveCategorie = "Alles";
     let huidigeZoekterm = "";
 
@@ -1136,6 +1178,7 @@
           knop.textContent = naam;
           if (sleutel === actieveAfdeling) knop.classList.add("actief");
           knop.addEventListener("click", () => {
+            wisProductLink();
             actieveAfdeling = sleutel;
             document.querySelectorAll("#afdelingen button").forEach(b => b.classList.remove("actief"));
             knop.classList.add("actief");
@@ -1184,6 +1227,7 @@
         knop.innerHTML = `<span>${cat}</span><span class="f-aantal">${tel(cat)}</span>`;
         if (cat === actieveCategorie) knop.classList.add("actief");
         knop.addEventListener("click", () => {
+          wisProductLink();
           actieveCategorie = cat;
           document.querySelectorAll("#filters button").forEach(b => b.classList.remove("actief"));
           knop.classList.add("actief");
@@ -1236,10 +1280,15 @@
     function toonProducten(){
       const rooster = document.getElementById("rooster");
       const woorden = zonderAccenten(huidigeZoekterm).split(/\s+/).filter(Boolean);
-      const lijst = productenInAfdeling().filter(p =>
-        (actieveCategorie === "Alles" || p.categorie === actieveCategorie) &&
-        pastBijZoekterm(p, woorden)
-      );
+      // Kwam de klant via een productlink (nieuwsbrief)? Dan enkel die producten,
+      // met de hele groep erbij zodat het keuzelijstje (bv. sterkte) blijft werken.
+      const lijst = gekozenProducten
+        ? ALLE_PRODUCTEN.filter(p => isZichtbaar(p) && gekozenProducten.toon.has(p.id))
+        : productenInAfdeling().filter(p =>
+            (actieveCategorie === "Alles" || p.categorie === actieveCategorie) &&
+            pastBijZoekterm(p, woorden)
+          );
+      document.getElementById("productlink-balk").style.display = gekozenProducten ? "flex" : "none";
 
       rooster.innerHTML = "";                       // maak eerst leeg
       const kaarten = maakKaarten(lijst);
@@ -1285,6 +1334,14 @@
         }
         rooster.appendChild(kaart);
       });
+
+      // Productlink naar één variant (bv. leesbril +2,00): die meteen kiezen
+      if (gekozenProducten){
+        rooster.querySelectorAll("select.variant").forEach(sel => {
+          const hit = [...sel.options].find(o => gekozenProducten.gevraagd.has(o.value));
+          if (hit) sel.value = hit.value;
+        });
+      }
 
       // teksten en lege-staat bijwerken
       const n = lijst.length;
@@ -1397,7 +1454,8 @@
       const kies = knop.closest(".kaart").querySelector("select.variant");
       voegToe(kies ? kies.value : knop.dataset.id);
     });
-    document.getElementById("zoekveld").addEventListener("input", e => { huidigeZoekterm = e.target.value; toonProducten(); });
+    document.getElementById("zoekveld").addEventListener("input", e => { wisProductLink(); huidigeZoekterm = e.target.value; toonProducten(); });
+    document.getElementById("productlink-alles").addEventListener("click", () => { wisProductLink(); toonProducten(); });
     // Harmonicaknop: elke tik klapt de categorielijst open of dicht.
     document.getElementById("filterknop").addEventListener("click", () => {
       const staatOpen = document.getElementById("filters").classList.contains("open");
@@ -1863,7 +1921,12 @@
     maakAfdelingen();
     zetHero();
     maakFilters();
+    leesProductLink();   // link uit de nieuwsbrief? dan enkel die producten
     toonProducten();
+    if (gekozenProducten) {
+      // meteen naar het product, ook op een gsm waar de banner het scherm vult
+      setTimeout(() => document.getElementById("productlink-balk").scrollIntoView({ block: "start" }), 50);
+    }
     laadMandje();
     tekenMandje();
     zetWelkomVak();  // vakje "welkomstkorting aanvragen" in de banner

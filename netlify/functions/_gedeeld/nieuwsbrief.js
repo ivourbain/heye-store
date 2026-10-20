@@ -114,7 +114,7 @@ export async function startInschrijving({ email, instellingen, siteUrl, winkel, 
 //  2) eerder gevonden ID (onthouden in de opslag)
 //  3) opzoeken op naam in Resend, en anders aanmaken
 // Lukt het niet, dan "" : het contact komt dan gewoon zonder segment in Resend.
-async function segmentId(sleutel) {
+export async function segmentId(sleutel) {
   if (process.env.RESEND_SEGMENT_ID) return process.env.RESEND_SEGMENT_ID;
   const naam = process.env.RESEND_SEGMENT_NAAM || "Nieuwsbrief webshop";
   const kast = opslag();

@@ -20,6 +20,7 @@ import { kortingInstellingen, maakCode, datumTekst } from "./_gedeeld/korting.js
 import { opslag, emailHash, vandaag } from "./_gedeeld/opslag.js";
 import { leesInstellingen } from "./_gedeeld/instellingen.js";
 import { verstuurMail } from "./_gedeeld/mail.js";
+import { startInschrijving, nieuwsbriefInstellingen } from "./_gedeeld/nieuwsbrief.js";
 
 const MAX_VERSTUURD   = 3;     // hoe vaak we dezelfde code opnieuw mailen
 const MAX_PER_DAG     = 200;   // nieuwe codes per dag, als rem tegen misbruik
@@ -39,6 +40,7 @@ function euro(bedrag) {
 // De mail zelf: platte tekst + een eenvoudige opgemaakte versie
 function maakMail({ winkel, code, percentage, minimum, geldigTot, link }) {
   const tot = datumTekst(geldigTot);
+  const voorwaarden = link.split("/?")[0] + "/voorwaarden.html#korting";
   const voorwaarde = minimum > 0 ? ` op een bestelling vanaf ${euro(minimum)}` : "";
   const tekst =
 `Welkom bij ${winkel}!
@@ -54,7 +56,9 @@ Of klik op deze link, dan staat de code meteen klaar:
 ${link}
 
 Veel shopplezier!
-${winkel}`;
+${winkel}
+
+Actievoorwaarden: ${voorwaarden}`;
 
   const html =
 `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#222;line-height:1.5">
@@ -70,16 +74,13 @@ ${winkel}`;
   </p>
   <p style="font-size:13px;color:#666">Of open je winkelmandje, klik op "Heb je een kortingscode?" en vul de code in.</p>
   <p>Veel shopplezier!<br>${winkel}</p>
+  <p style="font-size:12px;color:#888;margin-top:22px"><a href="${voorwaarden}" style="color:#888">Actievoorwaarden</a></p>
 </div>`;
   return { tekst, html };
 }
 
-export default async (req) => {
-  if (req.method !== "POST") return antwoord(405, { ok: false, melding: "Method not allowed" });
-
-  let data;
-  try { data = await req.json(); } catch (e) { return antwoord(400, { ok: false, melding: "Ongeldige gegevens." }); }
-
+// De welkomstcode zelf (aanmaken / opnieuw sturen). Geeft een Response terug.
+async function kortingAanvraag(req, data) {
   // Verborgen veldje: een mens laat het leeg, een spambot vult het in
   if (data.website) return antwoord(200, { ok: true, melding: "Bedankt!" });
 
@@ -176,4 +177,42 @@ export default async (req) => {
     console.log("vraag-korting fout:", e.message);
     return antwoord(500, { ok: false, melding: "Er liep iets mis. Probeer het zo meteen opnieuw." });
   }
+}
+
+export default async (req) => {
+  if (req.method !== "POST") return antwoord(405, { ok: false, melding: "Method not allowed" });
+
+  let data;
+  try { data = await req.json(); } catch (e) { return antwoord(400, { ok: false, melding: "Ongeldige gegevens." }); }
+
+  const resultaat = await kortingAanvraag(req, data);
+
+  // ---- Nieuwsbrief: enkel als de klant het vinkje ZELF aanzette ----
+  // Los van de korting: ook wie zijn code al gebruikte, mag zich inschrijven.
+  // Altijd met dubbele bevestiging (mail met link + knop), zie _gedeeld/nieuwsbrief.js.
+  const email = String(data.email || "").trim().slice(0, 100);
+  if (data.nieuwsbrief !== true || data.website || !EMAIL_PATROON.test(email)) return resultaat;
+
+  let inst;
+  try { inst = leesInstellingen(); } catch (e) { inst = {}; }
+  if (!nieuwsbriefInstellingen(inst).actief) return resultaat;
+
+  let extra = "";
+  try {
+    const winkel = (inst.winkel && inst.winkel.toonnaam) || "Heye Store";
+    extra = await startInschrijving({
+      email, instellingen: inst, winkel,
+      siteUrl: process.env.URL || new URL(req.url).origin,
+      van: { naam: winkel, adres: (inst.bedrijf && inst.bedrijf.email) || "info@heyestore.be" }
+    });
+  } catch (e) {
+    console.log("Nieuwsbrief-inschrijving mislukt:", e.message);
+    extra = "De inschrijving op de nieuwsbrief lukte nu niet; probeer het later gerust opnieuw.";
+  }
+  if (!extra) return resultaat;
+
+  const j = await resultaat.json();
+  j.melding = ((j.melding || "") + " " + extra).trim();
+  j.nieuwsbrief = true;
+  return antwoord(resultaat.status, j);
 };

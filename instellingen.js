@@ -32,6 +32,11 @@
 //                De vaste codes (bv. voor een flyer) staan NIET hier
 //                (dit bestand kan iedereen lezen) maar geheim in Netlify:
 //                Environment variables -> KORTINGSCODES
+//    nieuwsbrief het vinkje "nieuws en aanbiedingen" in het welkomstvak.
+//                actief (true/false) en tekst = de EXACTE zin naast het vinkje.
+//                Die zin wordt ook als bewijs van toestemming bewaard: pas hem
+//                dus niet stilletjes aan. Nieuwe inschrijvers komen in Resend
+//                (RESEND_API_KEY in Netlify).
 //    infobalk    het zwarte balkje bovenaan elke pagina. Je mag deze
 //                invulwoorden gebruiken, ze worden vanzelf ingevuld:
 //                  gratisVanaf, verzendkost, levering, vervoerder, leverland
@@ -81,6 +86,10 @@ const INSTELLINGEN = {
     "minimum": 25,
     "welkom": true,
     "geldigDagen": 30
+  },
+  "nieuwsbrief": {
+    "actief": true,
+    "tekst": "Ja, stuur me af en toe nieuws en aanbiedingen van Heye Store. Afmelden kan altijd."
   },
   "infobalk": {
     "vet": "Gratis verzending vanaf {gratisVanaf}",

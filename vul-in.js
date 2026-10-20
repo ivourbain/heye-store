@@ -27,6 +27,9 @@
 //     leveringTot    "2 tot 5"    (zoals in de voorwaarden)
 //     vervoerder     "bpost"
 //     leverland      "België"
+//     kortingPct     "15%"        (welkomstkorting, uit korting.percentage)
+//     kortingVanaf   "€25"        (minimum aan producten, uit korting.minimum)
+//     kortingDagen   "30"         (geldigheid persoonlijke code, uit korting.geldigDagen)
 // ============================================================
 
 (function () {
@@ -77,7 +80,7 @@
     return "€" + (Number.isInteger(n) ? String(n) : n.toFixed(2).replace(".", ","));
   }
 
-  const b = I.bedrijf || {}, v = I.verzending || {};
+  const b = I.bedrijf || {}, v = I.verzending || {}, k = I.korting || {};
   const adres = `${b.straat}, ${b.postcode} ${b.gemeente}`;
 
   const WAARDEN = {
@@ -97,7 +100,11 @@
     levering:           `${v.leveringMin}–${v.leveringMax}`,
     leveringTot:        `${v.leveringMin} tot ${v.leveringMax}`,
     vervoerder:         v.vervoerder,
-    leverland:          v.leverland
+    leverland:          v.leverland,
+    // zelfde standaardwaarden als de servercode (_gedeeld/korting.js)
+    kortingPct:         `${Number(k.percentage) > 0 ? Number(k.percentage) : 15}%`,
+    kortingVanaf:       euroKort(k.minimum != null && k.minimum !== "" && Number(k.minimum) >= 0 ? k.minimum : 25),
+    kortingDagen:       String(Number(k.geldigDagen) > 0 ? Number(k.geldigDagen) : 30)
   };
 
   // "Gratis verzending vanaf {gratisVanaf}" -> "Gratis verzending vanaf €40"

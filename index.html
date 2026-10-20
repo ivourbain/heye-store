@@ -248,6 +248,9 @@
     .welkom-melding.ok{color:#1c6b3a;font-weight:600}
     /* verborgen veldje tegen spambots: een mens ziet het niet */
     .welkom-honing{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+    .welkom-nb{display:flex;gap:8px;align-items:flex-start;text-align:left;font-size:13px;color:var(--tekst, #333);
+      margin-top:10px;cursor:pointer;line-height:1.4}
+    .welkom-nb input{margin-top:2px;width:16px;height:16px;flex:none;accent-color:var(--oranje)}
     @media (max-width:520px){
       .welkom-vak{margin-top:14px;padding:12px 12px 10px}
       .welkom-titel{font-size:14.5px}
@@ -470,6 +473,11 @@
           <button type="submit" id="welkom-knop">Stuur mijn code</button>
         </div>
         <input type="text" id="welkom-website" tabindex="-1" autocomplete="off" class="welkom-honing" aria-hidden="true">
+        <!-- Nieuwsbrief: standaard UIT. De tekst komt uit instellingen.js (nieuwsbrief.tekst). -->
+        <label class="welkom-nb" id="welkom-nb" style="display:none">
+          <input type="checkbox" id="welkom-nb-vink">
+          <span id="welkom-nb-tekst"></span>
+        </label>
         <p class="welkom-klein" id="welkom-klein"></p>
         <p class="welkom-melding" id="welkom-melding" style="display:none"></p>
       </form>
@@ -804,7 +812,15 @@
       document.getElementById("welkom-klein").innerHTML =
         `Eén persoonlijke code per e-mailadres · ${dagen} dagen geldig`
         + (min > 0 ? ` · vanaf ${euro(min)}` : "")
+        + ` · <a href="voorwaarden.html#korting" target="_blank">voorwaarden</a>`
         + ` · <a href="privacy.html" target="_blank">privacy</a>`;
+      // Vinkje voor de nieuwsbrief: altijd uit bij het tonen, de klant kiest zelf
+      const nb = I.nieuwsbrief || {};
+      if (nb.actief !== false && nb.tekst){
+        document.getElementById("welkom-nb-tekst").textContent = nb.tekst;
+        document.getElementById("welkom-nb-vink").checked = false;
+        document.getElementById("welkom-nb").style.display = "flex";
+      }
       vak.style.display = "block";
     }
 
@@ -825,13 +841,20 @@
         const resp = await fetch("/.netlify/functions/vraag-korting", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, website: document.getElementById("welkom-website").value })
+          body: JSON.stringify({
+            email,
+            website: document.getElementById("welkom-website").value,
+            // enkel true als de klant het vinkje zelf aanzette
+            nieuwsbrief: document.getElementById("welkom-nb").style.display !== "none"
+                         && document.getElementById("welkom-nb-vink").checked === true
+          })
         });
         data = await resp.json();
       } catch(err){ data = null; }
       knop.disabled = false; knop.textContent = "Stuur mijn code";
       if (data && data.ok){
         document.getElementById("welkom-rij").style.display = "none";
+        document.getElementById("welkom-nb").style.display = "none";
         welkomMelding("✓ " + data.melding, true);
         try { localStorage.setItem(WELKOM_SLEUTEL, "1"); } catch(e){}
       } else {
@@ -861,6 +884,7 @@
         vak.style.display = "block";
         document.getElementById("welkom-rij").style.display = "none";
         document.getElementById("welkom-klein").style.display = "none";
+        document.getElementById("welkom-nb").style.display = "none";
         welkomMelding(`✓ Je kortingscode ${antwoord.code} staat klaar: ${antwoord.percentage}% korting wordt automatisch afgetrokken in je mandje.`, true);
       } else if (antwoord){
         vak.style.display = "block";

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <title>Nieuwsbrief — Heye Store</title>
+  <meta name="robots" content="noindex">
+  <style>
+    :root{--oranje:#c95000;--oranje-donker:#a84200;
+      --oranje-licht:#fff4ed;--accent-zacht:#ffb27a;--rand-accent:#ffd9c2;--inkt:#1a1a1a;--grijs:#6d6469;
+      --lijn:#eae5e0;--achtergrond:#faf8f6;--wit:#fff}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(--inkt);
+      background:var(--achtergrond);line-height:1.65}
+    .infobalk{background:var(--inkt);color:#fff;font-size:13.5px;text-align:center;
+      padding:9px 16px;letter-spacing:.2px}
+    .infobalk strong{color:var(--accent-zacht);font-weight:700}
+    .infobalk .scheiding{opacity:.45;margin:0 10px}
+    @media (max-width:700px){
+      .infobalk{font-size:12.5px;padding:8px 12px}
+      .infobalk .weg-op-gsm{display:none}
+    }
+    header{background:var(--wit);border-bottom:1px solid var(--lijn)}
+    .balk{max-width:820px;margin:0 auto;padding:16px 22px;display:flex;align-items:center;justify-content:space-between}
+    .logo img{display:block;height:40px;width:auto}
+    .terug{color:var(--oranje-donker);text-decoration:none;font-size:14px;font-weight:600}
+    .terug:hover{text-decoration:underline}
+    main{max-width:820px;margin:0 auto;padding:34px 22px 70px}
+    h1{font-size:28px;margin-bottom:6px;color:var(--inkt)}
+    .datum{color:var(--grijs);font-size:13px;margin-bottom:24px}
+    h2{font-size:18px;margin:28px 0 8px;color:var(--oranje-donker)}
+    p,li{font-size:15px;margin-bottom:10px}
+    ul{margin:0 0 10px 22px}
+    a{color:var(--oranje-donker)}
+    .nota{background:var(--oranje-licht);border:1px solid var(--rand-accent);border-left:4px solid var(--oranje);
+      border-radius:10px;padding:14px 18px;margin-bottom:26px;font-size:14px;color:var(--inkt)}
+    .invul{background:#fff3cd;border-radius:4px;padding:1px 6px;font-weight:600;font-size:13px}
+    .gegevens{background:var(--wit);border:1px solid var(--lijn);border-radius:12px;padding:16px 20px;margin:14px 0}
+    .gegevens p{margin-bottom:3px}
+    footer{border-top:1px solid var(--lijn);background:var(--wit)}
+    .voet{max-width:820px;margin:0 auto;padding:20px 22px;font-size:13px;color:var(--grijs);
+      display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+    .voet a{color:var(--grijs);text-decoration:none;margin-right:14px}
+    .voet a:hover{color:var(--oranje-donker)}
+      .kaart{background:var(--wit);border:1px solid var(--lijn);border-radius:14px;padding:26px 24px;max-width:560px;margin:10px auto 0;text-align:center}
+    .kaart p{font-size:15.5px}
+    .knop{display:inline-block;border:none;background:var(--oranje);color:#fff;border-radius:12px;padding:13px 26px;
+      font-size:16px;font-weight:600;cursor:pointer;margin-top:10px;text-decoration:none}
+    .knop:hover{background:var(--oranje-donker)}
+    .knop:disabled{opacity:.6;cursor:default}
+    .melding{margin-top:14px;font-size:15px}
+    .melding.ok{color:#1c6b3a;font-weight:600}
+    .melding.fout{color:#b3261e}
+</style>
+  <!-- Instellingen (gegevens, teksten, kleur) zo vroeg mogelijk laden, zodat de
+       pagina meteen in de juiste kleur verschijnt. vul-in.js vult daarna de teksten in. -->
+  <script src="instellingen.js"></script>
+  <script src="vul-in.js"></script>
+</head>
+<body>
+  <div class="infobalk">
+    <strong>Gratis verzending vanaf €40</strong><span class="weg-op-gsm"><span class="scheiding">·</span>Levering in 2–5 werkdagen<span class="scheiding">·</span>Veilig betalen met Bancontact</span>
+  </div>
+
+  <header><div class="balk">
+    <a class="logo" href="index.html"><img src="logo.png" alt="Heye Store" width="218" height="120"></a>
+    <a class="terug" href="index.html">← Terug naar de winkel</a>
+  </div></header>
+
+  <main>
+    <h1 style="text-align:center">Nieuwsbrief</h1>
+    <div class="kaart">
+      <div id="vraag">
+        <p>Wil je af en toe nieuws en aanbiedingen van <span data-i="toonnaam">Heye Store</span> per mail ontvangen?</p>
+        <p style="font-size:13.5px;color:var(--grijs)">Afmelden kan altijd, via de link onderaan elke nieuwsbrief.
+          Meer uitleg vind je in ons <a href="privacy.html">privacybeleid</a>.</p>
+        <button class="knop" id="bevestig">Ja, ik bevestig mijn inschrijving</button>
+      </div>
+      <p class="melding" id="melding" style="display:none"></p>
+      <p id="terug" style="display:none;margin-top:16px"><a class="knop" href="index.html">Naar de winkel</a></p>
+    </div>
+  </main>
+
+  <script>
+    // De code uit de bevestigingslink (…/nieuwsbrief.html?t=…).
+    // We schrijven NIET in bij het openen van deze pagina, enkel na de klik
+    // op de knop: zo kan een virusscanner die de link opent niemand inschrijven.
+    const token = new URLSearchParams(location.search).get("t") || "";
+    const knop = document.getElementById("bevestig");
+    const melding = document.getElementById("melding");
+    function toon(tekst, ok){
+      melding.textContent = tekst;
+      melding.className = "melding " + (ok ? "ok" : "fout");
+      melding.style.display = "block";
+    }
+    if (!token){
+      document.getElementById("vraag").style.display = "none";
+      toon("Deze pagina open je via de bevestigingslink in je mail.", false);
+      document.getElementById("terug").style.display = "block";
+    }
+    knop.addEventListener("click", async () => {
+      knop.disabled = true; knop.textContent = "Even geduld…";
+      let data = null;
+      try {
+        const r = await fetch("/.netlify/functions/bevestig-inschrijving", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ t: token })
+        });
+        data = await r.json();
+      } catch(e){ data = null; }
+      if (data && data.ok){
+        document.getElementById("vraag").style.display = "none";
+        toon("✓ " + data.melding, true);
+        document.getElementById("terug").style.display = "block";
+        history.replaceState(null, "", location.pathname);   // code uit de adresbalk halen
+      } else {
+        knop.disabled = false; knop.textContent = "Ja, ik bevestig mijn inschrijving";
+        toon((data && data.melding) || "Er liep iets mis. Probeer het straks opnieuw.", false);
+        if (data && (data.status === "verlopen" || data.status === "onbekend" || data.status === "ongeldig")){
+          document.getElementById("vraag").style.display = "none";
+          document.getElementById("terug").style.display = "block";
+        }
+      }
+    });
+  </script>
+
+  <footer><div class="voet">
+    <div>
+      <a href="index.html">Winkel</a><a href="voorwaarden.html">Voorwaarden</a><a href="privacy.html">Privacy</a><a href="retour.html">Retour</a>
+    </div>
+    <div><span data-i="bedrijfsnaam">CR.Service - Heye Store</span> · Ondernemingsnr. <span data-i="ondernemingsnummer">0449.281.828</span></div>
+  </div></footer>
+</body>
+</html>

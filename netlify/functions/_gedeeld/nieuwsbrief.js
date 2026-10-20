@@ -63,6 +63,26 @@ ${winkel}`;
   return { tekst, html };
 }
 
+// Staat dit adres in Resend als ingeschreven? "actief", "afgemeld", "onbekend"
+// (bestaat niet in Resend) of "fout" (Resend niet bereikbaar). Bij "fout" doen we
+// alsof het adres nog ingeschreven is: liever geen dubbele bevestigingsmail dan
+// een bewijs van toestemming overschrijven.
+async function standInResend(email) {
+  const sleutel = process.env.RESEND_API_KEY;
+  if (!sleutel) return "fout";
+  try {
+    const r = await fetch(`https://api.resend.com/contacts/${encodeURIComponent(email)}`, {
+      headers: { "Authorization": `Bearer ${sleutel}` }
+    });
+    if (r.status === 404) return "onbekend";
+    if (!r.ok) return "fout";
+    const j = await r.json();
+    return j.unsubscribed ? "afgemeld" : "actief";
+  } catch (e) {
+    return "fout";
+  }
+}
+
 // Stap 2: bevestigingsmail sturen. Geeft een korte zin terug voor de klant,
 // of "" als er niets te melden is (bv. al ingeschreven).
 export async function startInschrijving({ email, instellingen, siteUrl, winkel, van }) {
@@ -74,7 +94,13 @@ export async function startInschrijving({ email, instellingen, siteUrl, winkel, 
   const sleutel = `nieuwsbrief/${hash}`;
   const huidig = await kast.get(sleutel, { type: "json" });
 
-  if (huidig && huidig.status === "bevestigd") return "Je bent al ingeschreven op onze nieuwsbrief.";
+  // Volgens onze opslag al ingeschreven? Dan bij Resend nakijken of dat nog klopt:
+  // wie zich via de afmeldlink in een nieuwsbrief afmeldde, staat daar op
+  // "unsubscribed" en mag zich gewoon opnieuw inschrijven (met nieuwe bevestiging).
+  if (huidig && huidig.status === "bevestigd") {
+    const stand = await standInResend(email);
+    if (stand !== "afgemeld" && stand !== "onbekend") return "Je bent al ingeschreven op onze nieuwsbrief.";
+  }
 
   const nu = new Date();
   let token = huidig && huidig.token;
@@ -144,30 +170,35 @@ export async function segmentId(sleutel) {
   }
 }
 
-// Contact in Resend zetten (of terug op "ingeschreven" als het al bestond)
+// Contact in Resend zetten (of terug op "ingeschreven" als het al bestond).
+// Eerst nakijken of het contact al bestaat: dan bijwerken (bv. iemand die zich
+// ooit afmeldde en nu opnieuw inschrijft), anders aanmaken.
 async function voegToeAanResend(email) {
   const sleutel = process.env.RESEND_API_KEY;
   if (!sleutel) throw new Error("RESEND_API_KEY ontbreekt in Netlify");
   const segment = await segmentId(sleutel);
   const kop = { "Authorization": `Bearer ${sleutel}`, "Content-Type": "application/json" };
+  const adres = `https://api.resend.com/contacts/${encodeURIComponent(email)}`;
 
-  const r = await fetch("https://api.resend.com/contacts", {
-    method: "POST", headers: kop,
-    body: JSON.stringify({ email, unsubscribed: false, ...(segment ? { segments: [{ id: segment }] } : {}) })
-  });
-  if (r.ok) return;
+  // Bestaat het al? (Lukt die vraag niet, dan proberen we gewoon aan te maken.)
+  const bestaand = await fetch(adres, { headers: { "Authorization": `Bearer ${sleutel}` } }).catch(() => null);
 
-  // Bestaat het contact al? Dan zetten we het (opnieuw) op ingeschreven.
-  const fout1 = await r.text().catch(() => "");
-  const r2 = await fetch(`https://api.resend.com/contacts/${encodeURIComponent(email)}`, {
-    method: "PATCH", headers: kop, body: JSON.stringify({ unsubscribed: false })
-  });
+  if (!bestaand || !bestaand.ok) {
+    const r = await fetch("https://api.resend.com/contacts", {
+      method: "POST", headers: kop,
+      body: JSON.stringify({ email, unsubscribed: false, ...(segment ? { segments: [{ id: segment }] } : {}) })
+    });
+    if (r.ok) return;
+    // Intussen toch aangemaakt (bv. twee keer snel geklikt)? Dan hieronder bijwerken.
+  }
+
+  const r2 = await fetch(adres, { method: "PATCH", headers: kop, body: JSON.stringify({ unsubscribed: false }) });
   if (!r2.ok) {
-    const fout2 = await r2.text().catch(() => "");
-    throw new Error(`Resend weigerde (${r.status}: ${fout1.slice(0, 120)} / ${r2.status}: ${fout2.slice(0, 120)})`);
+    const fout = await r2.text().catch(() => "");
+    throw new Error(`Resend weigerde (${r2.status}: ${fout.slice(0, 120)})`);
   }
   if (segment) {
-    await fetch(`https://api.resend.com/contacts/${encodeURIComponent(email)}/segments/${encodeURIComponent(segment)}`, {
+    await fetch(`${adres}/segments/${encodeURIComponent(segment)}`, {
       method: "POST", headers: { "Authorization": `Bearer ${sleutel}` }
     }).catch(() => {});
   }

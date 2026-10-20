@@ -92,7 +92,7 @@ const INSTELLINGEN = {
   "nieuwsbrief": {
     "actief": true,
     "tekst": "Ja, stuur me af en toe nieuws en aanbiedingen van Heye Store. Afmelden kan altijd.",
-    "afzender": "nieuws@send.heyestore.be"
+    "afzender": "nieuwsbrief@nieuws.heyestore.be"
   },
   "infobalk": {
     "vet": "Gratis verzending vanaf {gratisVanaf}",

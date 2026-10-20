@@ -36,6 +36,7 @@ const METHODE = {
 };
 
 import { markeerGebruikt } from "./_gedeeld/korting.js";
+import { registreerBestelling } from "./_gedeeld/resultaten.js";
 import { alsLambda } from "./_gedeeld/lambda.js";
 
 async function handler(event) {
@@ -80,6 +81,20 @@ async function handler(event) {
       await markeerGebruikt(md.kortingscode, md.bestelnummer, "online");
     } catch (e) {
       console.log("Kortingscode niet als gebruikt gemarkeerd:", e.message);
+    }
+  }
+
+  // Voor het tabblad Resultaten: elke betaalde online bestelling (zonder persoonsgegevens)
+  if (betaling.status === "paid") {
+    try {
+      await registreerBestelling({
+        bestelnummer: md.bestelnummer, betaalwijze: "online",
+        totaal: betaling.amount && betaling.amount.value,
+        korting: String(md.korting || "").split("=")[1] || 0,   // "15% = 5.55" -> 5.55
+        code: md.kortingscode
+      });
+    } catch (e) {
+      console.log("Bestelling niet geregistreerd:", e.message);
     }
   }
 

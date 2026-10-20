@@ -568,6 +568,7 @@
       <input type="hidden" name="totaal"       id="f-totaal">
       <input type="hidden" name="pakbon"       id="f-bestelling">
       <input type="hidden" name="kortingscode" id="f-kortingscode">
+      <input type="hidden" name="kortingbedrag" id="f-kortingbedrag">
 
       <h2 style="text-align:center">Jouw gegevens</h2>
       <p class="betaal-uitleg" style="text-align:center">Vul je gegevens in zodat we je bestelling kunnen leveren.
@@ -1658,6 +1659,7 @@
       // Enkel een code die echt korting geeft. Zo weet de server (submission-created)
       // welke persoonlijke welkomstcode bij een overschrijving opgebruikt is.
       document.getElementById("f-kortingscode").value = (b.korting > 0 && kortingInfo) ? kortingInfo.code : "";
+      document.getElementById("f-kortingbedrag").value = b.korting > 0 ? euro(b.korting) : "";
 
       vulKlantIn();     // bewaarde gegevens alvast invullen (indien de klant dat koos)
       toonBestelFout(false);   // een melding van een vorige poging hoort hier niet meer

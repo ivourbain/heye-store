@@ -6,14 +6,17 @@
 //  zomaar gebruiken.
 //
 //  Wat doet het?
-//  Komt er een BESTELLING per OVERSCHRIJVING binnen met een persoonlijke
-//  welkomstcode, dan zetten we die code op "gebruikt". Zo kan ze geen
-//  tweede keer gebruikt worden.
+//  Komt er een BESTELLING per OVERSCHRIJVING binnen:
+//   - met een persoonlijke welkomstcode: die code op "gebruikt" zetten
+//     (zo kan ze geen tweede keer gebruikt worden)
+//   - altijd: de bestelling noteren voor het tabblad Resultaten
+//     (bestelnummer, bedrag, korting, code — geen persoonsgegevens)
 //  (Bij online betalen gebeurt dat pas als Mollie "betaald" meldt, in
 //   mollie-webhook.js — een afgebroken betaling verbruikt de code dus niet.)
 // ============================================================
 
 import { markeerGebruikt } from "./_gedeeld/korting.js";
+import { registreerBestelling } from "./_gedeeld/resultaten.js";
 
 export default async (req) => {
   let payload = {};
@@ -23,20 +26,31 @@ export default async (req) => {
     return new Response("Geen leesbare gegevens");
   }
 
-  // Enkel het bestelformulier heeft de velden "kortingscode" en "betaalwijze"
+  // Enkel het bestelformulier heeft het veld "betaalwijze"
   // (het formulier "betaling" van de Mollie-melding niet).
   const d = payload.data || {};
-  if (!d.kortingscode) return new Response("Niets te doen");
 
   // Enkel overschrijvingen. Online bestellingen wachten op Mollie.
   if (!String(d.betaalwijze || "").startsWith("Overschrijving")) {
-    return new Response("Online bestelling — wacht op Mollie");
+    return new Response("Niets te doen (geen overschrijving)");
   }
 
+  if (d.kortingscode) {
+    try {
+      await markeerGebruikt(d.kortingscode, d.bestelnummer, "overschrijving");
+    } catch (e) {
+      console.log("Kortingscode niet als gebruikt gemarkeerd:", e.message);
+    }
+  }
+
+  // Voor het tabblad Resultaten (zonder persoonsgegevens)
   try {
-    await markeerGebruikt(d.kortingscode, d.bestelnummer, "overschrijving");
+    await registreerBestelling({
+      bestelnummer: d.bestelnummer, betaalwijze: "overschrijving",
+      totaal: d.totaal, korting: d.kortingbedrag, code: d.kortingscode
+    });
   } catch (e) {
-    console.log("Kortingscode niet als gebruikt gemarkeerd:", e.message);
+    console.log("Bestelling niet geregistreerd:", e.message);
   }
   return new Response("OK");
 };

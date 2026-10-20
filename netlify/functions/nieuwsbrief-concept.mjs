@@ -16,47 +16,15 @@
 //  Antwoord: { ok, id, melding }
 // ============================================================
 
-import crypto from "crypto";
 import { segmentId } from "./_gedeeld/nieuwsbrief.js";
 import { leesInstellingen } from "./_gedeeld/instellingen.js";
-
-// beheer.html draait als bestand op je computer (geen website), dus de
-// browser vraagt eerst "mag dit?" (CORS). Het wachtwoord beschermt de functie.
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, x-beheer-sleutel",
-  "Access-Control-Max-Age": "86400"
-};
-
-function antwoord(status, data) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...CORS, "Content-Type": "application/json", "Cache-Control": "no-store" }
-  });
-}
-
-function zelfdeSleutel(a, b) {
-  const x = crypto.createHash("sha256").update(String(a)).digest();
-  const y = crypto.createHash("sha256").update(String(b)).digest();
-  return crypto.timingSafeEqual(x, y);
-}
+import { antwoord, weigerTenzijBeheer } from "./_gedeeld/beheer.js";
 
 const AFMELDEN = "{{{RESEND_UNSUBSCRIBE_URL}}}";
 
 export default async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-  if (req.method !== "POST") return antwoord(405, { ok: false, melding: "Method not allowed" });
-
-  const juist = process.env.BEHEER_SLEUTEL || "";
-  if (juist.length < 20) {
-    return antwoord(503, { ok: false, melding: "BEHEER_SLEUTEL ontbreekt in Netlify (of is korter dan 20 tekens)." });
-  }
-  const gegeven = req.headers.get("x-beheer-sleutel") || "";
-  if (!gegeven || !zelfdeSleutel(gegeven, juist)) {
-    await new Promise(r => setTimeout(r, 1000));   // raden traag maken
-    return antwoord(401, { ok: false, melding: "Het beheerwachtwoord klopt niet." });
-  }
+  const geweigerd = await weigerTenzijBeheer(req);   // wachtwoord + CORS (_gedeeld/beheer.js)
+  if (geweigerd) return geweigerd;
 
   const sleutel = process.env.RESEND_API_KEY;
   if (!sleutel) return antwoord(503, { ok: false, melding: "RESEND_API_KEY ontbreekt in Netlify." });

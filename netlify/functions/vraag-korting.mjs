@@ -20,6 +20,7 @@ import { kortingInstellingen, maakCode, datumTekst } from "./_gedeeld/korting.js
 import { opslag, emailHash, vandaag } from "./_gedeeld/opslag.js";
 import { leesInstellingen } from "./_gedeeld/instellingen.js";
 import { verstuurMail } from "./_gedeeld/mail.js";
+import { netteBron } from "./_gedeeld/resultaten.js";
 import { startInschrijving, nieuwsbriefInstellingen } from "./_gedeeld/nieuwsbrief.js";
 
 const MAX_VERSTUURD   = 3;     // hoe vaak we dezelfde code opnieuw mailen
@@ -139,7 +140,7 @@ async function kortingAanvraag(req, data) {
     const geldigTot = new Date(nu.getTime() + k.geldigDagen * 24 * 3600 * 1000);
     geldigTot.setUTCHours(21, 59, 59, 0);   // tot het einde van die dag (Belgische tijd)
     const record = { emailHash: hash, aangemaakt: nu.toISOString(), geldigTot: geldigTot.toISOString(),
-                     percentage: k.percentage, gebruikt: false };
+                     percentage: k.percentage, gebruikt: false, bron: netteBron(data.bron) };
 
     let code = null;
     for (let poging = 0; poging < 5 && !code; poging++) {

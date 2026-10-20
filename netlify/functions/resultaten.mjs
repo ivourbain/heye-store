@@ -5,6 +5,8 @@
 //   - bestellingen: aantal, omzet, met/zonder kortingscode, per code
 //   - nieuwsbrief: bevestigde inschrijvingen (en hoeveel er in Resend
 //     actief of afgemeld zijn)
+//   - per kanaal (bron in de link, bv. facebook / nieuwsbrief): codes,
+//     bestellingen en omzet
 //   - alles ook per week (laatste 8 weken)
 //  Er gaan GEEN e-mailadressen of namen naar beheer.html: enkel aantallen,
 //  bedragen en bestelnummers.
@@ -119,6 +121,13 @@ export default async (req) => {
     });
     best.omzet = c(best.omzet); best.korting = c(best.korting); best.omzetMetCode = c(best.omzetMetCode);
 
+    // ---- per kanaal (bron) ----
+    const perBron = {};
+    const kanaal = b => (perBron[b || "rechtstreeks"] = perBron[b || "rechtstreeks"] ||
+      { bron: b || "rechtstreeks", codes: 0, codesGebruikt: 0, bestellingen: 0, omzet: 0 });
+    codes.forEach(x => { const k = kanaal(x.bron); k.codes++; if (x.gebruikt) k.codesGebruikt++; });
+    bestellingen.forEach(x => { const k = kanaal(x.bron); k.bestellingen++; k.omzet = c(k.omzet + (x.totaal || 0)); });
+
     // ---- nieuwsbrief ----
     const nb = { bevestigd: 0, wacht: 0, resend };
     nieuwsbrief.forEach(x => {
@@ -129,12 +138,13 @@ export default async (req) => {
     // ---- laatste bestellingen (zonder persoonsgegevens) ----
     const recent = bestellingen.sort((a, b) => String(b.datum).localeCompare(String(a.datum))).slice(0, 15)
       .map(x => ({ nummer: x.sleutel.replace(/^bestelling\//, ""), datum: x.datum, betaalwijze: x.betaalwijze,
-                   totaal: x.totaal || 0, korting: x.korting || 0, code: x.code || "" }));
+                   totaal: x.totaal || 0, korting: x.korting || 0, code: x.code || "", bron: x.bron || "" }));
 
     return antwoord(200, {
       ok: true, gemaakt: new Date().toISOString(),
       welkom, bestellingen: best, perCode: Object.values(perCode).sort((a, b) => b.aantal - a.aantal),
-      nieuwsbrief: nb, weken, recent
+      nieuwsbrief: nb, weken, recent,
+      perBron: Object.values(perBron).sort((a, b) => b.omzet - a.omzet || b.bestellingen - a.bestellingen || b.codes - a.codes)
     });
   } catch (e) {
     console.log("resultaten fout:", e.message);

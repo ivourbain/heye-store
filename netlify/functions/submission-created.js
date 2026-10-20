@@ -47,7 +47,7 @@ export default async (req) => {
   try {
     await registreerBestelling({
       bestelnummer: d.bestelnummer, betaalwijze: "overschrijving",
-      totaal: d.totaal, korting: d.kortingbedrag, code: d.kortingscode
+      totaal: d.totaal, korting: d.kortingbedrag, code: d.kortingscode, bron: d.bron
     });
   } catch (e) {
     console.log("Bestelling niet geregistreerd:", e.message);

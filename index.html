@@ -569,6 +569,7 @@
       <input type="hidden" name="pakbon"       id="f-bestelling">
       <input type="hidden" name="kortingscode" id="f-kortingscode">
       <input type="hidden" name="kortingbedrag" id="f-kortingbedrag">
+      <input type="hidden" name="bron" id="f-bron">
 
       <h2 style="text-align:center">Jouw gegevens</h2>
       <p class="betaal-uitleg" style="text-align:center">Vul je gegevens in zodat we je bestelling kunnen leveren.
@@ -855,6 +856,7 @@
           body: JSON.stringify({
             email,
             website: document.getElementById("welkom-website").value,
+            bron: huidigeBron(),
             // enkel true als de klant het vinkje zelf aanzette
             nieuwsbrief: document.getElementById("welkom-nb").style.display !== "none"
                          && document.getElementById("welkom-nb-vink").checked === true
@@ -902,6 +904,34 @@
         welkomMelding(antwoord.reden || "Deze kortingscode is niet geldig.", false);
       }
       return true;
+    }
+
+    /* ---- BRON (…/?bron=facebook) ------------------------------------------
+       Links op sociale media, in de nieuwsbrief of op het kaartje in de winkel
+       krijgen een "bron". Die onthouden we 30 dagen op het toestel van de
+       bezoeker (geen persoonsgegevens: enkel het woordje, bv. "facebook"), en
+       geven we mee met de bestelling. Zo toont beheer.html (Resultaten) welk
+       kanaal bestellingen oplevert. De laatste bron telt. */
+    const BRON_SLEUTEL = "heye_bron";
+    function netteBron(t){ return String(t || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 30); }
+    function leesBronLink(){
+      let bron = "";
+      try { bron = netteBron(new URLSearchParams(location.search).get("bron")); } catch(e){}
+      if (!bron) return;
+      try { localStorage.setItem(BRON_SLEUTEL, JSON.stringify({ bron, tot: Date.now() + 30 * 24 * 3600 * 1000 })); } catch(e){}
+      try {
+        const url = new URL(location.href);
+        url.searchParams.delete("bron");
+        history.replaceState(null, "", url.pathname + url.search + url.hash);
+      } catch(e){}
+    }
+    function huidigeBron(){
+      try {
+        const b = JSON.parse(localStorage.getItem(BRON_SLEUTEL) || "null");
+        if (b && b.bron && Date.now() < b.tot) return netteBron(b.bron);
+        if (b) localStorage.removeItem(BRON_SLEUTEL);
+      } catch(e){}
+      return "";
     }
 
     /* ---- PRODUCTLINK (…/?p=ME28585 of ?p=ME28585,ME26936) ----------------
@@ -1660,6 +1690,7 @@
       // welke persoonlijke welkomstcode bij een overschrijving opgebruikt is.
       document.getElementById("f-kortingscode").value = (b.korting > 0 && kortingInfo) ? kortingInfo.code : "";
       document.getElementById("f-kortingbedrag").value = b.korting > 0 ? euro(b.korting) : "";
+      document.getElementById("f-bron").value = huidigeBron();
 
       vulKlantIn();     // bewaarde gegevens alvast invullen (indien de klant dat koos)
       toonBestelFout(false);   // een melding van een vorige poging hoort hier niet meer
@@ -1712,6 +1743,7 @@
             mandje: mandje,                 // { "ME26936": 2, ... }
             controlebedrag: huidigTotaal,   // enkel ter controle
             bestelnummer: huidigeMededeling,
+            bron: huidigeBron(),   // via welk kanaal kwam de klant binnen (bv. facebook)
             // enkel de CODE; de server zoekt zelf op hoeveel korting dat is
             kortingscode: (kortingInfo && berekening().korting > 0) ? kortingInfo.code : "",
             email: (document.querySelector("input[name=email]") || {}).value || ""
@@ -1920,6 +1952,7 @@
     });
 
     // Start: afdelings- en filterknoppen bouwen, bewaard mandje terugladen en alles tonen
+    leesBronLink();      // ?bron=facebook onthouden (en uit de adresbalk halen)
     maakAfdelingen();
     zetHero();
     maakFilters();

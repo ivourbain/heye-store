@@ -264,7 +264,9 @@ async function handler(event) {
       verzending: verzending.toFixed(2),
       // Leeg als er geen kortingscode gebruikt werd
       kortingscode: kortingInfo ? kortingInfo.code : "",
-      korting: korting ? `${kortingInfo.percentage}% = ${korting.toFixed(2)}` : ""
+      korting: korting ? `${kortingInfo.percentage}% = ${korting.toFixed(2)}` : "",
+      // Via welk kanaal kwam de klant binnen (bv. "facebook"); leeg = rechtstreeks
+      bron: String(data.bron || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 30)
     }
     // 'method' laten we open -> Mollie toont de klant zijn betaalmethodes
     // (Bancontact, kaart, ...). Zet je dit op "bancontact", dan gaat het meteen daarheen.

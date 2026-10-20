@@ -91,7 +91,8 @@ async function handler(event) {
         bestelnummer: md.bestelnummer, betaalwijze: "online",
         totaal: betaling.amount && betaling.amount.value,
         korting: String(md.korting || "").split("=")[1] || 0,   // "15% = 5.55" -> 5.55
-        code: md.kortingscode
+        code: md.kortingscode,
+        bron: md.bron
       });
     } catch (e) {
       console.log("Bestelling niet geregistreerd:", e.message);
